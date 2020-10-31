@@ -16,7 +16,7 @@ function fk_move_terms() {
 
 	$parents = [];
 
-	$nested = new Nested_Terms();
+	$nested = new Nested_Term_Query();
 
 	/** @var WP_Term $term */
 	foreach ( $terms as $term ) {
