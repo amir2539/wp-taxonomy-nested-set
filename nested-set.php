@@ -24,5 +24,21 @@ function amir_add_nested_set() {
 
 	global $wpdb;
 
+	$args = [
+		'taxonomy'   => [ 'cat' ],
+		'hide_empty' => false,
+		'include' => [1, 2],
+		'exclude' => [3]
+	];
+
+	$query = new Nested_Term_Query( $args );
+	$query->get_terms();
+	die();
+
 }
 
+function echo_pre( $value ) {
+	echo "<pre>";
+	print_r( $value );
+	echo "</pre>";
+}

@@ -43,15 +43,101 @@ class Nested_Term_Query {
 	 *
 	 * @var array $query_vars
 	 */
-	public $query_vars =[];
+	public $default_query_vars = [];
+	public $query_vars = [];
 
 	/**
 	 * Nested_Term_Query constructor.
 	 *
-	 * @return Nested_Term_Query
+	 * setup the term queries passed
+	 *
+	 * @param array $args {
+	 *
+	 * @todo add query vars  doc
+	 *
+	 * }
 	 */
-	public function __construct() {
-		return $this->get_instance();
+	public function __construct( array $args = [] ) {
+
+		$this->default_query_vars = [
+			'taxonomy'   => NULL,
+			'orderby'    => 'name',
+			'order'      => 'ASC',
+			'hide_empty' => true,
+			'include'    => [],
+			'exclude'    => [],
+		];
+
+		$this->query_vars = array_merge( $this->default_query_vars, $args );
+
+//		return $this->get_instance( $args );
+	}
+
+
+	public function get_terms() {
+		$args = array_merge( $this->default_query_vars, $this->query_vars );
+
+		$clauses = [];
+
+		//check args taxonomy is set and is rray or string
+		if ( ! empty( $args['taxonomy'] ) ) {
+			if ( is_array( $args['taxonomy'] ) ) {
+
+				$args['taxonomy'] = array_map( 'esc_sql', $args['taxonomy'] );
+
+
+				$clauses[] = " taxonomy IN (" . implode( ',', $args['taxonomy'] ) . ")";
+			} else {
+				$clauses[] = " taxonomy = " . esc_sql( $args['taxonomy'] );
+			}
+		}
+
+		//check if hide_empty = true hide count = 0
+		if ( $args['hide_empty'] ) {
+			$clauses[] = " count > 0";
+		}
+
+		//cehck include term ids if is set any
+		if ( is_array( $args['include'] ) && count( $args['include'] ) ) {
+
+			$args['include'] = array_map( 'esc_sql', $args['include'] );
+
+			$clauses[] = " id IN (" . implode( ',', $args['include'] ) . ")";
+		}
+
+		//cehck exclude term ids if is set any
+		if ( is_array( $args['exclude'] ) && count( $args['exclude'] ) ) {
+
+			$args['exclude'] = array_map( 'esc_sql', $args['exclude'] );
+
+
+			$clauses[] = " id NOT IN (" . implode( ',', $args['exclude'] ) . ")";
+		}
+
+		//search for exact name
+		if ( isset( $args['name'] ) && ! empty( $args['name'] ) ) {
+			$value     = esc_sql( $args['name'] );
+			$clauses[] = " name = '$value'";
+		}
+
+		//search for exact slug
+		if ( isset( $args['slug'] ) && ! empty( $args['slug'] ) ) {
+			$value     = esc_sql( $args['slug'] );
+			$clauses[] = " slug = '$value'";
+		}
+
+		//seach in terms name and slug
+		if ( isset( $args['search'] ) && ! empty( $args['seach'] ) ) {
+			$value     = esc_sql( $args['name'] );
+			$clauses[] = " name LIKE '%$value%' OR slug LIKE '%$value%'";
+		}
+
+		if(isset($args['parent']) && intval($args['parent']) > 0){
+			$value = intval($args['parent']);
+
+		}
+
+		echo_pre( $clauses );
 	}
 
 	/**
@@ -63,9 +149,9 @@ class Nested_Term_Query {
 	 * @since 5.0.0
 	 *
 	 */
-	public static function get_instance() {
+	public static function get_instance( $args ) {
 		if ( NULL === self::$instance ) {
-			self::$instance = new self();
+			self::$instance = new self( $args );
 		}
 
 		return self::$instance;
