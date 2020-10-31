@@ -107,25 +107,29 @@ class  Nested_Terms {
 
 	public $query_vars;
 
-	/**
-	 * @var wpdb $db
-	 */
-	public $db;
 
 	protected $query_var_defaults;
 
 	/**
 	 * Nested_Terms constructor.
 	 * Define and use global database object
+	 *
+	 * @param null $term
 	 */
-	public function __construct() {
-		global $wpdb;
-		$this->db =& $wpdb;
+	public function __construct( $term = NULL ) {
+		if ( ! is_null( $term ) ) {
+			foreach ( get_object_vars( $term ) as $key => $value ) {
+				$this->$key = $value;
+			}
+		}
+
 
 	}
 
 	private function get_max() {
-		$max = $this->db->get_var( "SELECT max({$this->rightName}) as aggregate from {$this->table}" );
+		global $wpdb;
+
+		$max = $wpdb->get_var( "SELECT max({$this->rightName}) as aggregate from {$this->table}" );
 
 		return $max ?? 0;
 	}
@@ -137,26 +141,33 @@ class  Nested_Terms {
 	 *              true when taxonomy exists
 	 */
 	public function taxonomy_exists( string $taxonomy ): bool {
-		$taxonomy = $this->db->get_var( "SELECT taxonomy from {$this->table} where taxonomy = '{$taxonomy}' LIMIT 1" );
 
+		global $wpdb;
+
+		$taxonomy = $wpdb->get_var( "SELECT taxonomy from {$this->table} where taxonomy = '{$taxonomy}' LIMIT 1" );
 
 		return is_null( $taxonomy ) ? false : true;
 	}
 
 	/**
 	 * @param string      $name
+	 * @param string      $slug
 	 * @param string      $taxonomy
+	 * @param int         $parent
+	 *
 	 * @param string|null $description
 	 * @param int         $term_group
-	 * @param int         $parent
+	 *
+	 * @param int         $count
 	 *
 	 * @return bool|false|int returns id of inserted node
 	 *                        if there is error in database returns false
 	 */
-	public function insert( string $name, string $taxonomy, int $parent = 0, string $description = NULL, int $term_group = 0 ) {
+	public function insert( string $name, string $slug, string $taxonomy, int $parent = 0, string $description = NULL, int $term_group = 0 , int $count =0) {
 
 		//insert new with max left and right
 		//if is new taxonomy create a root
+		global $wpdb;
 
 		$parent_left = 0;
 
@@ -173,8 +184,9 @@ class  Nested_Terms {
 		$left  = $max + 1;
 		$right = $max + 2;
 
-		$this->db->insert( $this->table, [
+		$wpdb->insert( $this->table, [
 			'name'           => $name,
+			'slug'           => $slug,
 			'taxonomy'       => $taxonomy,
 			$this->leftName  => $left,
 			$this->rightName => $right,
@@ -182,7 +194,7 @@ class  Nested_Terms {
 			'term_group'     => $term_group,
 		] );
 
-		$node_id = $this->db->insert_id;
+		$node_id = $wpdb->insert_id;
 
 		//get parent left and update it
 		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $parent );
@@ -205,12 +217,12 @@ class  Nested_Terms {
 					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
 
 
-		$result = $this->db->query( $query );
+		$result = $wpdb->query( $query );
 
-		if ( ! empty( $this->db->last_error ) || ! $result ) {
+		if ( ! empty( $wpdb->last_error ) || ! $result ) {
 			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
 					'query' => $query,
-					'error' => $this->db->last_error,
+					'error' => $wpdb->last_error,
 				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
 
 			return false;
@@ -234,7 +246,9 @@ class  Nested_Terms {
 	 * @return bool|false|int
 	 */
 	public function update_node( int $id, int $left, int $right, int $parent = 0 ) {
-		return $this->db->update( $this->table, [
+		global $wpdb;
+
+		return $wpdb->update( $this->table, [
 			$this->leftName  => $left,
 			$this->rightName => $right,
 			'parent'         => $parent,
@@ -250,12 +264,14 @@ class  Nested_Terms {
 	 * @return array return right index nad id of inserted root
 	 */
 	public function make_taxonomy_root( string $taxonomy ): array {
+		global $wpdb;
+
 		$max = $this->get_max();
 
 		$left  = $max + 1;
 		$right = $max + 2;
 
-		$this->db->insert( $this->table, [
+		$wpdb->insert( $this->table, [
 			'name'           => $taxonomy,
 			'taxonomy'       => $taxonomy,
 			$this->leftName  => $left,
@@ -265,7 +281,7 @@ class  Nested_Terms {
 
 		return [
 			'right' => $right,
-			'id'    => $this->db->insert_id,
+			'id'    => $wpdb->insert_id,
 		];
 	}
 
@@ -275,7 +291,9 @@ class  Nested_Terms {
 	 * @return int left index of parent
 	 */
 	public function get_parent_left( int $parent ): int {
-		$left = $this->db->get_var( "SELECT {$this->leftName} from {$this->table} where id = {$parent}" );
+		global $wpdb;
+
+		$left = $wpdb->get_var( "SELECT {$this->leftName} from {$this->table} where id = {$parent}" );
 
 		return $left ?? 0;
 	}
@@ -290,6 +308,7 @@ class  Nested_Terms {
 	 * @return array|object|WP_Error
 	 */
 	public function get_all_children( int $parent, string $taxonomy = "" ) {
+		global $wpdb;
 
 		$taxonomy_clause = "";
 
@@ -297,7 +316,7 @@ class  Nested_Terms {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$parent = $this->db->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
+		$parent = $wpdb->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
 
 		if ( is_null( $parent ) ) {
 			return new WP_Error( 'invalid_term', __( 'Empty Term.' ) );
@@ -309,7 +328,7 @@ class  Nested_Terms {
 		$query = "SELECT * from {$this->table} where {$this->leftName} between {$parent_left} and {$parent_right} 
 		and {$this->rightName} between {$parent_left} and {$parent_right}" . $taxonomy_clause;
 
-		return $this->db->get_results( $query );
+		return $wpdb->get_results( $query );
 	}
 
 
@@ -323,6 +342,7 @@ class  Nested_Terms {
 	 * @return array|object|WP_Error
 	 */
 	public function get_children( int $parent, string $taxonomy = "" ) {
+		global $wpdb;
 
 		$taxonomy_clause = "";
 
@@ -330,7 +350,7 @@ class  Nested_Terms {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$parent = $this->db->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
+		$parent = $wpdb->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
 
 		if ( is_null( $parent ) ) {
 			return new WP_Error( 'invalid_term', __( 'Empty Term.' ) );
@@ -338,7 +358,7 @@ class  Nested_Terms {
 
 		$query = "SELECT * from {$this->table} where parent = {$parent}" . $taxonomy_clause;
 
-		return $this->db->get_results( $query );
+		return $wpdb->get_results( $query );
 	}
 
 
@@ -346,20 +366,21 @@ class  Nested_Terms {
 	 * @param        $id
 	 * @param string $taxonomy
 	 *
-	 * @return array|bool|object
+	 * @return array|bool|object return false if term does not exists
+	 *                           return Nesterm_Terms object if find
 	 */
 	public function get_term( $id, string $taxonomy = "" ) {
+		global $wpdb;
 
 		$taxonomy_clause = "";
 		if ( ! empty( $taxonomy ) ) {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$query  = "SELECT * from {$this->table} were id = $id" . $taxonomy_clause;
-		$result = $this->db->get_row( $$query );
+		$query = "SELECT * from {$this->table} were id = $id" . $taxonomy_clause;
+		$term  = $wpdb->get_row( $$query );
 
-		return $result ?? false;
+		return is_null( $term ) ? false : new Nested_Terms( $term );
 	}
-
 
 }
