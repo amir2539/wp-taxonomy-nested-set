@@ -22,14 +22,12 @@ function amir_add_nested_set() {
 		return false;
 	}
 
-	nested_move_terms();
-	die();
 
 	global $wpdb;
 
 	$args = [
-		'taxonomy'   => 'product_cat',
-		'hide_empty' => false,
+		'taxonomy'     => 'product_cat',
+		'hide_empty'   => false,
 		//		'parent'     => 2,
 		//		'fields'     => 'name',
 		//		'number'     => 2,
@@ -37,6 +35,9 @@ function amir_add_nested_set() {
 		//		'orderby'     => 'count',
 		//		'order'      => 'DESC',
 		//		'description__like' => ''
+		'meta_key'     => 'thumbnail_id',
+		'meta_value'   => 60,
+		'meta_compare' => '<>',
 
 	];
 

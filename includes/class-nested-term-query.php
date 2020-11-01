@@ -246,8 +246,28 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			//chceck associatives after get
 		}
 
+
+		//check for metas
+		if ( isset( $args['meta_key'], $args['meta_value'] ) && ! empty( $args['meta_key'] ) && ! empty( $args['meta_value'] ) ) {
+			$compare = "=";
+			$key     = esc_sql( $args['meta_key'] );
+			$value   = esc_sql( $args['meta_value'] );
+
+			if ( isset( $args['meta_compare'] ) && ! empty( $args['meta_compare'] ) ) {
+				$operands = [ '=', '<>', '>=', '<=', '>=', '>', '<' ];
+
+				if ( in_array( $args['meta_compare'], $operands ) ) {
+					$compare = esc_sql( $args['meta_compare'] );
+				}
+			}
+
+			$clauses[] = " JSON_EXTRACT(`meta`, '$.{$key}') {$compare} {$value} ";
+		}
+
+
 		$clause = implode( ' AND ', $clauses );
 		$query  = "SELECT {$field} from {$this->table} where {$clause} {$order_by} {$order} {$limit} {$offset} ";
+
 
 		//if fields not equal to all the get col
 		$get_function = "get_results";
@@ -257,6 +277,10 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 
 		$terms = $wpdb->$get_function( $query );
+
+		foreach ( $terms as &$term ) {
+			$term->meta = json_decode($term->meta);
+		}
 
 		do_action( 'nested_after_get_terms', $terms );
 
