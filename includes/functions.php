@@ -26,7 +26,9 @@ function nested_taxonomy_exists( string $taxonomy ): bool {
  * @return Nested_Term|bool
  */
 function nested_get_term( string $term_id, string $taxonomy = "" ) {
-	return new Nested_Term( $term_id, $taxonomy );
+	$term = new Nested_Term();
+
+	return $term->get_instance( $term_id, $taxonomy );
 }
 
 /**

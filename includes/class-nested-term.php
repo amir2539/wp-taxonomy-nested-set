@@ -108,19 +108,6 @@ class  Nested_Term {
 	public $query_vars;
 
 
-	/**
-	 * Nested_Terms constructor.
-	 * Define and use global database object
-	 *
-	 * @param null   $term
-	 * @param string $taxonomy
-	 */
-	public function __construct( $term, $taxonomy = "" ) {
-
-
-		return $this->get_instance( $term, $taxonomy );
-
-	}
 
 
 	/**
@@ -138,16 +125,19 @@ class  Nested_Term {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$query = "SELECT * from {$this->table} were id = $id" . $taxonomy_clause;
-		$term  = $wpdb->get_row( $$query );
+		$query = "SELECT * from {$this->table} where id = $id" . $taxonomy_clause;
+		$term  = $wpdb->get_row( $query );
 
-		if ( is_null( $term ) ) {
+		// if term does not found or its taxonomy parent
+		if ( is_null( $term ) || $term->parent == 0 ) {
 			return false;
 		}
-
 		foreach ( get_object_vars( $term ) as $key => $value ) {
 			$this->$key = $value;
 		}
+		//add left and right
+		$this->left = $term->{$this->leftName};
+		$this->right = $term->{$this->rightName};
 
 		return $this;
 	}
@@ -184,18 +174,7 @@ class  Nested_Term {
 	}
 
 
-	/**
-	 * @param int $parent
-	 *
-	 * @return int left index of parent
-	 */
-	public function get_parent_left( int $parent ): int {
-		global $wpdb;
 
-		$left = $wpdb->get_var( "SELECT {$this->leftName} from {$this->table} where id = {$parent}" );
-
-		return $left ?? 0;
-	}
 
 	/**
 	 * returns all of children of given id in all levels

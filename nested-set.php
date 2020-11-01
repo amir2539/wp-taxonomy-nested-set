@@ -22,13 +22,22 @@ function amir_add_nested_set() {
 		return false;
 	}
 
+	nested_move_terms();
+	die();
+
 	global $wpdb;
 
 	$args = [
-		'taxonomy'   => [ 'cat' ],
+		'taxonomy'   => 'product_cat',
 		'hide_empty' => false,
-		'include' => [1, 2],
-		'exclude' => [3]
+		//		'parent'     => 2,
+		//		'fields'     => 'name',
+		//		'number'     => 2,
+		//		'offset'     => 1,
+		//		'orderby'     => 'count',
+		//		'order'      => 'DESC',
+		//		'description__like' => ''
+
 	];
 
 	$query = new Nested_Term_Query( $args );
@@ -36,6 +45,7 @@ function amir_add_nested_set() {
 	die();
 
 }
+
 
 function echo_pre( $value ) {
 	echo "<pre>";

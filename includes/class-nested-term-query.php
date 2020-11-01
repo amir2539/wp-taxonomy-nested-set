@@ -46,6 +46,8 @@ class Nested_Term_Query {
 	public $default_query_vars = [];
 	public $query_vars = [];
 
+	private $field_set = [];
+
 	/**
 	 * Nested_Term_Query constructor.
 	 *
@@ -58,6 +60,20 @@ class Nested_Term_Query {
 	 * }
 	 */
 	public function __construct( array $args = [] ) {
+
+		//define table fields that when fiekds is set should be in this
+		$this->field_set = [
+			'id',
+			'name',
+			'slug',
+			'description',
+			$this->leftName,
+			$this->rightName,
+			'parent',
+			'taxonomy',
+			'count',
+			'term_group',
+		];
 
 		$this->default_query_vars = [
 			'taxonomy'   => NULL,
@@ -75,9 +91,16 @@ class Nested_Term_Query {
 
 
 	public function get_terms() {
+		global $wpdb;
+
 		$args = array_merge( $this->default_query_vars, $this->query_vars );
 
-		$clauses = [];
+		//init clauses and specify to donb't get the taxinomy root
+		$clauses = [
+			'parent <> 0',
+		];
+
+		$args = apply_filters( 'nested_pre_get_terms', $args );
 
 		//check args taxonomy is set and is rray or string
 		if ( ! empty( $args['taxonomy'] ) ) {
@@ -86,9 +109,9 @@ class Nested_Term_Query {
 				$args['taxonomy'] = array_map( 'esc_sql', $args['taxonomy'] );
 
 
-				$clauses[] = " taxonomy IN (" . implode( ',', $args['taxonomy'] ) . ")";
+				$clauses[] = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
 			} else {
-				$clauses[] = " taxonomy = " . esc_sql( $args['taxonomy'] );
+				$clauses[] = " taxonomy = '" . esc_sql( $args['taxonomy'] ) . "'";
 			}
 		}
 
@@ -127,17 +150,118 @@ class Nested_Term_Query {
 		}
 
 		//seach in terms name and slug
-		if ( isset( $args['search'] ) && ! empty( $args['seach'] ) ) {
-			$value     = esc_sql( $args['name'] );
+		if ( isset( $args['name__like'] ) && ! empty( $args['name__like'] ) ) {
+			$value     = esc_sql( $args['name__like'] );
+			$clauses[] = " name LIKE '%$value%'";
+
+
+		} elseif ( isset( $args['search'] ) && ! empty( $args['search'] ) ) {
+
+			//seach in terms name and slug
+			$value     = esc_sql( $args['search'] );
 			$clauses[] = " name LIKE '%$value%' OR slug LIKE '%$value%'";
 		}
 
-		if(isset($args['parent']) && intval($args['parent']) > 0){
-			$value = intval($args['parent']);
 
+		//search for description
+		if ( isset( $args['description__like'] ) && ! empty( $args['description__like'] ) ) {
+			$value     = esc_sql( $args['description__like'] );
+			$clauses[] = " description LIKE '%$value%' ";
 		}
 
-		echo_pre( $clauses );
+		//get children of given parent if found
+		$parent_set = false;
+		if ( isset( $args['parent'] ) && intval( $args['parent'] ) > 0 ) {
+			$value  = intval( $args['parent'] );
+			$parent = nested_get_term( $value );
+			//check term found
+			if ( $parent ) {
+
+				$clauses[] = "{$parent->leftName} between {$parent->left} and {$parent->right} 
+and {$parent->rightName} between {$parent->left} and {$parent->right}";
+
+				$parent_set = true;
+			}
+		}
+
+		//parent overrides child_of then use parent_set flag
+		//child_of means the adjacent parent of term should be this
+		if ( isset( $args['child_of'] ) && ! $parent_set && intval( $args['child_of'] ) > 0 ) {
+			$value     = intval( $args['child_of'] );
+			$clauses[] = " parent = $value";
+		}
+
+		//check if want a leaf term with no child
+		//if difference beetween left and right is 1 then its leaf
+		if ( isset( $args['childless'] ) && $args['childless'] ) {
+			$clauses[] = " {$this->leftName} = {$this->rightName}-1 ";
+		}
+
+
+		//Determine order of terms
+		$order_by = ' order by name';
+		if ( isset( $args['orderby'] ) && ! empty( $args['orderby'] ) ) {
+			$order_by = " order by " . esc_sql( $args['orderby'] );
+		}
+
+		$order = 'ASC';
+		if ( isset( $args['order'] ) && ! empty( $args['order'] ) ) {
+			$order = esc_sql( $args['order'] );
+		}
+
+		//Determine how many terms to return
+		$limit = '';
+		if ( isset( $args['number'] ) && intval( $args['number'] ) > 0 ) {
+			$limit = " limit " . intval( $args['number'] );
+		}
+		$offset = '';
+		if ( isset( $args['offset'] ) && intval( $args['offset'] ) > 0 ) {
+			$offset = "offset " . intval( $args['offset'] );
+		}
+
+		//Determine wich field(s) to return
+		$field = '*';
+		if ( isset( $args['fields'] ) && ! empty( $args['fields'] ) ) {
+			$value = esc_sql( $args['fields'] );
+
+			if ( $value == 'all' ) {
+				$field = '*';
+
+			} elseif ( $value == 'ids' || $value == 'tt_ids' ) {
+				$field = 'id';
+
+			} elseif ( $value == 'names' ) {
+				$field = 'name';
+
+			} elseif ( $value == 'slugs' ) {
+				$field = 'slug';
+
+			} elseif ( $value == 'count' ) {
+				$field = 'count';
+
+			} elseif ( in_array( $value, $this->field_set ) ) {
+				$field = $value;
+			}
+
+			//chceck associatives after get
+		}
+
+		$clause = implode( ' AND ', $clauses );
+		$query  = "SELECT {$field} from {$this->table} where {$clause} {$order_by} {$order} {$limit} {$offset} ";
+
+		//if fields not equal to all the get col
+		$get_function = "get_results";
+		if ( $field != '*' ) {
+			$get_function = "get_col";
+		}
+
+
+		$terms = $wpdb->$get_function( $query );
+
+		do_action( 'nested_after_get_terms', $terms );
+
+		echo_pre( $query );
+		echo_pre( $terms );
 	}
 
 	/**
@@ -198,10 +322,15 @@ class Nested_Term_Query {
 	 *
 	 * @param int         $count
 	 *
+	 * @param array|null  $meta
+	 *
 	 * @return bool|false|int returns id of inserted node
 	 *                        if there is error in database returns false
 	 */
-	public function insert( string $name, string $slug, string $taxonomy, int $parent = 0, string $description = NULL, int $term_group = 0, int $count = 0 ) {
+	public function insert(
+		string $name, string $slug, string $taxonomy, int $parent = 0,
+		string $description = NULL, int $term_group = 0, int $count = 0, array $meta = NULL
+	) {
 
 		//insert new with max left and right
 		//if is new taxonomy create a root
@@ -222,6 +351,10 @@ class Nested_Term_Query {
 		$left  = $max + 1;
 		$right = $max + 2;
 
+		if ( ! is_null( $meta ) ) {
+			$meta = json_encode( $meta );
+		}
+
 		$wpdb->insert( $this->table, [
 			'name'           => $name,
 			'slug'           => $slug,
@@ -230,6 +363,7 @@ class Nested_Term_Query {
 			$this->rightName => $right,
 			'description'    => $description,
 			'term_group'     => $term_group,
+			'meta'           => $meta,
 		] );
 
 		$node_id = $wpdb->insert_id;
@@ -324,5 +458,17 @@ class Nested_Term_Query {
 		];
 	}
 
+	/**
+	 * @param int $parent
+	 *
+	 * @return int left index of parent
+	 */
+	private function get_parent_left( int $parent ): int {
+		global $wpdb;
+
+		$left = $wpdb->get_var( "SELECT {$this->leftName} from {$this->table} where id = {$parent}" );
+
+		return $left ?? 0;
+	}
 
 }
