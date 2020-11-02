@@ -679,34 +679,71 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		$parent_left = 0;
 
-		if ( ! $this->taxonomy_exists( $term->taxonomy ) ) {
-			$result = $this->make_taxonomy_root( $term->taxonomy );
-			$max    = $result['right'];
-
-			$parent_left = $max - 1;
-			$parent      = $result['id'];
-		} else {
-			$max = $this->get_max();
-		}
+		$max = $this->get_max();
 
 		$left  = $max + 1;
 		$right = $max + 2;
 
+		//make left and right 0
+		$wpdb->update( $this->table, [
+			$this->leftName  => 0,
+			$this->rightName => 0,
+		], [
+			'id' => $term_id,
+		] );
 
-//		$wpdb->update( $this->table, [
-//			$this->leftName  => 0,
-//			$this->rightName => 0,
-//		] , );
 
-		$node_id = $wpdb->insert_id;
+		$node_id = $term_id;
 
 		//get parent left and update it
-		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $parent );
+		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $term->parent );
+
+		$left_range = $parent_left + 1;
+
+		$query = "UPDATE {$this->table} set {$this->leftName} = case 
+					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}-2 
+					else {$this->leftName} end ,
+					
+					{$this->rightName} = case
+					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}-2 
+					else '{$this->rightName}' end 
+					
+					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
+
+
+		$result = $wpdb->query( $query );
+
+		file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+				'query1' => $query,
+			], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+
+		if ( ! empty( $wpdb->last_error ) || ! $result ) {
+			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+					'query' => $query,
+					'error' => $wpdb->last_error,
+				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+
+			return false;
+		}
+
+		$max = $this->get_max();
+
+		$left  = $max + 1;
+		$right = $max + 2;
+
+		//make left and right 0
+		$wpdb->update( $this->table, [
+			$this->leftName  => $left,
+			$this->rightName => $right,
+		], [
+			'id' => $term_id,
+		] );
+		//get parent left and update it
+		$parent_left = $this->get_parent_left( $new_parent );
 
 		$diff = $left - ( $parent_left + 1 );
 
 		$left_range = $parent_left + 1;
-
 
 		$query = "UPDATE {$this->table} set {$this->leftName} = case 
 					when {$this->leftName} BETWEEN  {$left} and {$right} then {$this->leftName}-{$diff} 
@@ -721,19 +758,13 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
 
 
+		file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+				'query2' => $query,
+			], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
 		$result = $wpdb->query( $query );
 
-		if ( ! empty( $wpdb->last_error ) || ! $result ) {
-			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
-					'query' => $query,
-					'error' => $wpdb->last_error,
-				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
-
-			return false;
-		}
-
 		// update node
-		$this->update_node( $node_id, ( $left - $diff ), ( $right - $diff ), $parent );
+		$this->update_node( $node_id, ( $left - $diff ), ( $right - $diff ), $new_parent );
 
 		return $node_id;
 

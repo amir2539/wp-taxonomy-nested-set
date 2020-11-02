@@ -18,33 +18,24 @@ add_action( 'init', 'amir_add_nested_set' );
 
 function amir_add_nested_set() {
 
+	if (  isset( $_GET['move'] ) ) {
+
+		nested_move_terms();
+		die();
+	}
+
 	if ( ! isset( $_GET['nested'] ) ) {
 		return false;
 	}
 
 
-	global $wpdb;
+	$term = nested_get_term( 9 );
 
-	$args = [
-		'taxonomy'   => 'product_cat',
-		'hide_empty' => false,
-		//		'parent'     => 2,
-		//		'fields'     => 'name',
-		//		'number'     => 2,
-		//		'offset'     => 1,
-		//		'orderby'     => 'count',
-		//		'order'      => 'DESC',
-		//		'description__like' => ''
-		//		'meta_key'     => 'thumbnail_id',
-		//		'meta_value'   => '60',
-		//		'meta_compare' => '',
-//		'field' => 'id=>parent'
-	];
+	$term->update_term( $term, [
+		'parent' => 4,
+	] );
 
-	$query = new Nested_Term_Query( $args );
-	$query->get_terms();
 	die();
-
 }
 
 

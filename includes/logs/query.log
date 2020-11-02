@@ -1,0 +1,18 @@
+{
+    "query1": "UPDATE nested_set set _lft = case \r\n\t\t\t\t\twhen _lft BETWEEN  6 and 16 then _lft-2 \r\n\t\t\t\t\telse _lft end ,\r\n\t\t\t\t\t\r\n\t\t\t\t\t_rgt = case\r\n\t\t\t\t\twhen _rgt BETWEEN  6 and 16 then _rgt-2 \r\n\t\t\t\t\telse '_rgt' end \r\n\t\t\t\t\t\r\n\t\t\t\t\twhere (_lft between 6 and 16 or _rgt between 6 and 16)"
+}
+{
+    "query2": "UPDATE nested_set set _lft = case \r\n\t\t\t\t\twhen _lft BETWEEN  13 and 14 then _lft-11 \r\n\t\t\t\t\twhen _lft BETWEEN  2 and 14 then _lft+2 \r\n\t\t\t\t\telse _lft end ,\r\n\t\t\t\t\t\r\n\t\t\t\t\t_rgt = case \r\n\t\t\t\t\twhen _rgt BETWEEN  13 and 14 then _rgt-11 \r\n\t\t\t\t\twhen _rgt BETWEEN  2 and 14 then _rgt+2 \r\n\t\t\t\t\telse '_rgt' end \r\n\t\t\t\t\t\r\n\t\t\t\t\twhere (_lft between 2 and 14 or _rgt between 2 and 14)"
+}
+{
+    "query1": "UPDATE nested_set set _lft = case \r\n\t\t\t\t\twhen _lft BETWEEN  6 and 16 then _lft-2 \r\n\t\t\t\t\telse _lft end ,\r\n\t\t\t\t\t\r\n\t\t\t\t\t_rgt = case\r\n\t\t\t\t\twhen _rgt BETWEEN  6 and 16 then _rgt-2 \r\n\t\t\t\t\telse '_rgt' end \r\n\t\t\t\t\t\r\n\t\t\t\t\twhere (_lft between 6 and 16 or _rgt between 6 and 16)"
+}
+{
+    "query2": "UPDATE nested_set set _lft = case \r\n\t\t\t\t\twhen _lft BETWEEN  13 and 14 then _lft-10 \r\n\t\t\t\t\twhen _lft BETWEEN  3 and 14 then _lft+2 \r\n\t\t\t\t\telse _lft end ,\r\n\t\t\t\t\t\r\n\t\t\t\t\t_rgt = case \r\n\t\t\t\t\twhen _rgt BETWEEN  13 and 14 then _rgt-10 \r\n\t\t\t\t\twhen _rgt BETWEEN  3 and 14 then _rgt+2 \r\n\t\t\t\t\telse '_rgt' end \r\n\t\t\t\t\t\r\n\t\t\t\t\twhere (_lft between 3 and 14 or _rgt between 3 and 14)"
+}
+{
+    "query1": "UPDATE nested_set set _lft = case \r\n\t\t\t\t\twhen _lft BETWEEN  9 and 20 then _lft-2 \r\n\t\t\t\t\telse _lft end ,\r\n\t\t\t\t\t\r\n\t\t\t\t\t_rgt = case\r\n\t\t\t\t\twhen _rgt BETWEEN  9 and 20 then _rgt-2 \r\n\t\t\t\t\telse '_rgt' end \r\n\t\t\t\t\t\r\n\t\t\t\t\twhere (_lft between 9 and 20 or _rgt between 9 and 20)"
+}
+{
+    "query2": "UPDATE nested_set set _lft = case \r\n\t\t\t\t\twhen _lft BETWEEN  17 and 18 then _lft-13 \r\n\t\t\t\t\twhen _lft BETWEEN  4 and 18 then _lft+2 \r\n\t\t\t\t\telse _lft end ,\r\n\t\t\t\t\t\r\n\t\t\t\t\t_rgt = case \r\n\t\t\t\t\twhen _rgt BETWEEN  17 and 18 then _rgt-13 \r\n\t\t\t\t\twhen _rgt BETWEEN  4 and 18 then _rgt+2 \r\n\t\t\t\t\telse '_rgt' end \r\n\t\t\t\t\t\r\n\t\t\t\t\twhere (_lft between 4 and 18 or _rgt between 4 and 18)"
+}

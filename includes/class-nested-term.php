@@ -108,8 +108,6 @@ class  Nested_Term {
 	public $query_vars;
 
 
-
-
 	/**
 	 * @param        $id
 	 * @param string $taxonomy
@@ -136,7 +134,7 @@ class  Nested_Term {
 			$this->$key = $value;
 		}
 		//add left and right
-		$this->left = $term->{$this->leftName};
+		$this->left  = $term->{$this->leftName};
 		$this->right = $term->{$this->rightName};
 
 		return $this;
@@ -149,17 +147,8 @@ class  Nested_Term {
 	 *
 	 * @return bool|Nested_Term
 	 */
-	public static function update_term( $term, array $args ) {
+	public function update_term( $term, array $args ) {
 		global $wpdb;
-
-
-
-
-
-		unset( $args['parent'] );
-		//@todo: check for parent change
-
-		unset( $args['count'] );
 
 
 		if ( $term instanceof Nested_Term ) {
@@ -168,14 +157,20 @@ class  Nested_Term {
 			$term_id = $term;
 		}
 
+		if ( isset( $args['parent'] ) && intval( $args['parent'] ) > 0 ) {
+			$nested_query = new Nested_Term_Query();
+			$nested_query->re_insert( $term_id, $args['parent'] );
+		}
+
+		unset( $args['parent'] );
+		unset( $args['count'] );
+
 		return $wpdb->update( self::TABLE,
 			$args, [
 				'id' => $term_id,
 			] );
 
 	}
-
-
 
 
 	/**
@@ -240,5 +235,7 @@ class  Nested_Term {
 
 		return $wpdb->get_results( $query );
 	}
+
+
 
 }
