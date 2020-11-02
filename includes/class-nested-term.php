@@ -15,10 +15,10 @@ class  Nested_Term {
 
 	/**
 	 * nested set table name
-	 *
+	 *  wpdv->prefix . nested_set
 	 * @var string $table
 	 */
-	public $table = "nested_set";
+	public $table ;
 	const TABLE = "nested_set";
 
 	/**
@@ -108,6 +108,11 @@ class  Nested_Term {
 	public $query_vars;
 
 
+	public function __construct() {
+		global $wpdb;
+		$this->table = $wpdb->prefix . "nested_set";
+	}
+
 	/**
 	 * @param        $id
 	 * @param string $taxonomy
@@ -165,7 +170,7 @@ class  Nested_Term {
 		unset( $args['parent'] );
 		unset( $args['count'] );
 
-		return $wpdb->update( self::TABLE,
+		return $wpdb->update( $wpdb->prefix . self::TABLE,
 			$args, [
 				'id' => $term_id,
 			] );

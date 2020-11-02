@@ -19,10 +19,11 @@ class Nested_Term_Query {
 
 	/**
 	 * nested set table name
+	 * wpdb->prefix . nested_set
 	 *
 	 * @var string $table
 	 */
-	private $table = "nested_set";
+	private $table;
 
 	/**
 	 * specify left index name in database.
@@ -143,6 +144,10 @@ class Nested_Term_Query {
 	 * }
 	 */
 	public function __construct( array $args = [] ) {
+
+		global $wpdb;
+
+		$this->table = $wpdb->prefix . "nested_set";
 
 		$this->default_query_vars = [
 			'taxonomy'          => NULL,
@@ -642,6 +647,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			'taxonomy'       => $taxonomy,
 			$this->leftName  => $left,
 			$this->rightName => $right,
+			'description'    => '',
 		] );
 
 
