@@ -152,6 +152,10 @@ class  Nested_Term {
 	public static function update_term( $term, array $args ) {
 		global $wpdb;
 
+
+
+
+
 		unset( $args['parent'] );
 		//@todo: check for parent change
 
@@ -164,12 +168,10 @@ class  Nested_Term {
 			$term_id = $term;
 		}
 
-		$result = $wpdb->update( self::TABLE,
+		return $wpdb->update( self::TABLE,
 			$args, [
 				'id' => $term_id,
 			] );
-
-		return $result ? new Nested_Term( $term_id ) : false;
 
 	}
 

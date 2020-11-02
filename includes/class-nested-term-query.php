@@ -53,13 +53,120 @@ class Nested_Term_Query {
 	 *
 	 * setup the term queries passed
 	 *
-	 * @param array $args {
+	 * @param array       $args              {
 	 *
-	 * @todo add query vars  doc
+	 * Optional. Array or query string of term query parameters. Default empty.
+	 *
+	 * @type string|array $taxonomy          Taxonomy name, or array of taxonomies, to which results should
+	 *                                                be limited.
+	 * @type string       $orderby           Field(s) to order terms by. Accepts:
+	 *                                                - term fields ('name', 'slug', 'term_group', 'term_id', 'id',
+	 *                                                  'description', 'parent', 'term_order'). Unless `$object_ids`
+	 *                                                  is not empty, 'term_order' is treated the same as 'term_id'.
+	 *                                                - 'count' for term taxonomy count.
+	 *                                                - 'include' to match the 'order' of the $include param.
+	 *                                                - 'slug__in' to match the 'order' of the $slug param.
+	 *                                                - 'meta_value', 'meta_value_num'.
+	 *                                                - the value of `$meta_key`.
+	 *                                                - the array keys of `$meta_query`.
+	 *                                                - 'none' to omit the ORDER BY clause.
+	 *                                                Defaults to 'name'.
+	 * @type string       $order             Whether to order terms in ascending or descending order.
+	 *                                                Accepts 'ASC' (ascending) or 'DESC' (descending).
+	 *                                                Default 'ASC'.
+	 * @type bool|int     $hide_empty        Whether to hide terms not assigned to any posts. Accepts
+	 *                                                1|true or 0|false. Default 1|true.
+	 * @type array|string $include           Array or comma/space-separated string of term IDs to include.
+	 *                                                Default empty array.
+	 * @type array|string $exclude           Array or comma/space-separated string of term IDs to exclude.
+	 *                                                If $include is non-empty, $exclude is ignored.
+	 *                                                Default empty array.
+	 * @type int|string   $number            Maximum number of terms to return. Accepts ''|0 (all) or any
+	 *                                                positive number. Default ''|0 (all). Note that $number may
+	 *                                                not return accurate results when coupled with $object_ids.
+	 *                                                See #41796 for details.
+	 * @type int          $offset            The number by which to offset the terms query. Default empty.
+	 * @type string       $fields            Term fields to query for. Accepts:
+	 *                                                - 'all' Returns an array of complete term objects (`WP_Term[]`).
+	 *                                                - 'all_with_object_id' Returns an array of term objects
+	 *                                                  with the 'object_id' param (`WP_Term[]`). Works only
+	 *                                                  when the `$object_ids` parameter is populated.
+	 *                                                - 'ids' Returns an array of term IDs (`int[]`).
+	 *                                                - 'tt_ids' Returns an array of term taxonomy IDs (`int[]`).
+	 *                                                - 'names' Returns an array of term names (`string[]`).
+	 *                                                - 'slugs' Returns an array of term slugs (`string[]`).
+	 *                                                - 'count' Returns the number of matching terms (`int`).
+	 *                                                - 'id=>parent' Returns an associative array of parent term IDs,
+	 *                                                   keyed by term ID (`int[]`).
+	 *                                                - 'id=>name' Returns an associative array of term names,
+	 *                                                   keyed by term ID (`string[]`).
+	 *                                                - 'id=>slug' Returns an associative array of term slugs,
+	 *                                                   keyed by term ID (`string[]`).
+	 *                                                Default 'all'.
+	 * @type bool         $count             Whether to return a term count. If true, will take precedence
+	 *                                                over `$fields`. Default false.
+	 * @type string|array $name              Optional. Name or array of names to return term(s) for.
+	 *                                                Default empty.
+	 * @type string|array $slug              Optional. Slug or array of slugs to return term(s) for.
+	 *                                                Default empty.
+	 * @type int|array    $term_id           Optional. Term taxonomy ID, or array of term taxonomy IDs,
+	 *                                                to match when querying terms.
+	 * @type string       $search            Search criteria to match terms. Will be SQL-formatted with
+	 *                                                wildcards before and after. Default empty.
+	 * @type string       $name__like        Retrieve terms with criteria by which a term is LIKE
+	 *                                                `$name__like`. Default empty.
+	 * @type string       $description__like Retrieve terms where the description is LIKE
+	 *                                                `$description__like`. Default empty.
+	 * @type bool         $pad_counts        Whether to pad the quantity of a term's children in the
+	 *                                                quantity of each term's "count" object variable.
+	 *                                                Default false.
+	 * @type string       $get               Whether to return terms regardless of ancestry or whether the
+	 *                                                terms are empty. Accepts 'all' or empty (disabled).
+	 *                                                Default empty.
+	 * @type int          $child_of          Term ID to retrieve child terms of. If multiple taxonomies
+	 *                                                are passed, $child_of is ignored. Default 0.
+	 * @type int|string   $parent            Parent term ID to retrieve direct-child terms of.
+	 *                                                Default empty.
+	 * @type bool         $childless         True to limit results to terms that have no children.
+	 *                                                This parameter has no effect on non-hierarchical taxonomies.
+	 *                                                Default false.
+	 * @type array        $meta_query        Optional. Meta query clauses to limit retrieved terms by.
+	 *                                                See `WP_Meta_Query`. Default empty.
+	 * @type string       $meta_key          Limit terms to those matching a specific metadata key.
+	 *                                                Can be used in conjunction with `$meta_value`. Default empty.
+	 * @type string       $meta_value        Limit terms to those matching a specific metadata value.
+	 *                                                Usually used in conjunction with `$meta_key`. Default empty.
+	 * @type string       $meta_type         MySQL data type that the `$meta_value` will be CAST to for
+	 *                                                comparisons. Default empty.
+	 * @type string       $meta_compare      Comparison operator to test the 'meta_value'. Default empty.
 	 *
 	 * }
 	 */
 	public function __construct( array $args = [] ) {
+
+		$this->default_query_vars = [
+			'taxonomy'          => NULL,
+			'orderby'           => 'name',
+			'order'             => 'ASC',
+			'hide_empty'        => true,
+			'include'           => [],
+			'exclude'           => [],
+			'nmae'              => '',
+			'slug'              => '',
+			'name__like'        => '',
+			'search'            => '',
+			'description__like' => '',
+			'parent'            => 0,
+			'child_of'          => 0,
+			'childless'         => false,
+			'number'            => 0,
+			'offset'            => 0,
+			'fields'            => 'all',
+			'meta_key'          => '',
+			'meta_value'        => '',
+			'meta_compare'      => '',
+			'count'             => false,
+		];
 
 		//define table fields that when fiekds is set should be in this
 		$this->field_set = [
@@ -75,14 +182,6 @@ class Nested_Term_Query {
 			'term_group',
 		];
 
-		$this->default_query_vars = [
-			'taxonomy'   => NULL,
-			'orderby'    => 'name',
-			'order'      => 'ASC',
-			'hide_empty' => true,
-			'include'    => [],
-			'exclude'    => [],
-		];
 
 		$this->query_vars = array_merge( $this->default_query_vars, $args );
 
@@ -107,11 +206,12 @@ class Nested_Term_Query {
 			if ( is_array( $args['taxonomy'] ) ) {
 
 				$args['taxonomy'] = array_map( 'esc_sql', $args['taxonomy'] );
+				$clauses[]        = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
 
-
-				$clauses[] = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
 			} else {
-				$clauses[] = " taxonomy = '" . esc_sql( $args['taxonomy'] ) . "'";
+				$args['taxonomy'] = array_map( 'esc_sql', explode( ',', $args['taxonomy'] ) );
+				$clauses[]        = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
+
 			}
 		}
 
@@ -121,32 +221,61 @@ class Nested_Term_Query {
 		}
 
 		//cehck include term ids if is set any
-		if ( is_array( $args['include'] ) && count( $args['include'] ) ) {
+		if ( is_array( $args['include'] ) ) {
 
-			$args['include'] = array_map( 'esc_sql', $args['include'] );
+			if ( is_array( $args['include'] && count( $args['include'] ) ) ) {
+				$args['include'] = array_map( 'esc_sql', $args['include'] );
 
-			$clauses[] = " id IN (" . implode( ',', $args['include'] ) . ")";
+				$clauses[] = " id IN (" . implode( ',', $args['include'] ) . ")";
+			} elseif ( ! empty( $args['include'] ) ) {
+				$args['include'] = esc_sql( $args['include'] );
+
+				$clauses[] = " id IN (" . $args['include'] . ")";
+			}
+
 		}
 
 		//cehck exclude term ids if is set any
 		if ( is_array( $args['exclude'] ) && count( $args['exclude'] ) ) {
 
-			$args['exclude'] = array_map( 'esc_sql', $args['exclude'] );
 
+			if ( is_array( $args['exclude'] ) && count( $args['include'] ) ) {
+				$args['exclude'] = array_map( 'esc_sql', $args['exclude'] );
 
-			$clauses[] = " id NOT IN (" . implode( ',', $args['exclude'] ) . ")";
+				$clauses[] = " id NOT IN (" . implode( ',', $args['exclude'] ) . ")";
+
+			} elseif ( ! empty( $args['exclude'] ) ) {
+				$args['exclude'] = esc_sql( $args['exclude'] );
+
+				$clauses[] = " id NOT IN (" . $args['exclude'] . ")";
+			}
 		}
 
 		//search for exact name
-		if ( isset( $args['name'] ) && ! empty( $args['name'] ) ) {
-			$value     = esc_sql( $args['name'] );
-			$clauses[] = " name = '$value'";
+		if ( isset( $args['name'] ) ) {
+
+			if ( is_array( $args['name'] ) ) {
+				$args['name'] = array_map( 'esc_sql', $args['name'] );
+				$clauses[]    = " name IN (' " . implode( "','", $args['name'] ) . "')";
+
+			} elseif ( ! empty( $args['name'] ) ) {
+				$value     = esc_sql( $args['name'] );
+				$clauses[] = " name = '$value'";
+			}
 		}
 
 		//search for exact slug
 		if ( isset( $args['slug'] ) && ! empty( $args['slug'] ) ) {
-			$value     = esc_sql( $args['slug'] );
-			$clauses[] = " slug = '$value'";
+
+			if ( is_array( $args['slug'] ) ) {
+				$args['slug'] = array_map( 'esc_sql', $args['slug'] );
+				$clauses[]    = " slug IN (' " . implode( "','", $args['slug'] ) . "')";
+
+			} elseif ( ! empty( $args['slug'] ) ) {
+				$value     = esc_sql( $args['slug'] );
+				$clauses[] = " slug = '$value'";
+			}
+
 		}
 
 		//seach in terms name and slug
@@ -265,21 +394,59 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		}
 
 
-		$clause = implode( ' AND ', $clauses );
-		$query  = "SELECT {$field} from {$this->table} where {$clause} {$order_by} {$order} {$limit} {$offset} ";
-
-
 		//if fields not equal to all the get col
 		$get_function = "get_results";
 		if ( $field != '*' ) {
 			$get_function = "get_col";
 		}
+		//count arg override fields
+		if ( isset( $args['count'] ) && $args['count'] ) {
+			$field = "count";
+		}
+
+		$clause = implode( ' AND ', $clauses );
+		$query  = "SELECT {$field} from {$this->table} where {$clause} {$order_by} {$order} {$limit} {$offset} ";
 
 
+		//Execute query
 		$terms = $wpdb->$get_function( $query );
 
-		foreach ( $terms as &$term ) {
-			$term->meta = json_decode($term->meta);
+		//Check if meta is on result decode it
+		if ( $field == '*' ) {
+			foreach ( $terms as &$term ) {
+				$term->meta = json_decode( $term->meta );
+			}
+		}
+
+		//check if fields is one of associative fields change result array
+		$associative_fields = [
+			'id=>parent' => 'parent',
+			'id=>name'   => 'name',
+			'id=>slug'   => 'slug',
+		];
+
+		if ( array_key_exists( $args['field'], $associative_fields ) ) {
+			$result = [];
+
+
+			/** @var Nested_Term $term */
+			foreach ( $terms as $term ) {
+				$result[ $term->id ] = $term->{$associative_fields[ $args['field'] ]};
+			}
+			$terms = $result;
+		}
+
+		if ( $args['field'] == "all_with_object_id" ) {
+
+			foreach ( $terms as &$term ) {
+				$term_id = $term->id;
+				$term    = (array) $term;
+
+				$object_ids = $wpdb->get_col( "SELECT object_id from {$wpdb->term_relationships} where term_taxonomy_id = {$term_id}" );
+
+				$term['object_ids'] = $object_ids;
+				$term               = (object) $term;
+			}
 		}
 
 		do_action( 'nested_after_get_terms', $terms );
@@ -495,4 +662,80 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		return $left ?? 0;
 	}
 
+
+	/**
+	 * when update parent node we have to soft delete (remove left and right) node and re insert it
+	 *
+	 * @param int $term_id
+	 * @param int $new_parent
+	 */
+	public function re_insert( int $term_id, int $new_parent ) {
+
+		$term = nested_get_term( $term_id );
+
+		//insert new with max left and right
+		//if is new taxonomy create a root
+		global $wpdb;
+
+		$parent_left = 0;
+
+		if ( ! $this->taxonomy_exists( $term->taxonomy ) ) {
+			$result = $this->make_taxonomy_root( $term->taxonomy );
+			$max    = $result['right'];
+
+			$parent_left = $max - 1;
+			$parent      = $result['id'];
+		} else {
+			$max = $this->get_max();
+		}
+
+		$left  = $max + 1;
+		$right = $max + 2;
+
+
+//		$wpdb->update( $this->table, [
+//			$this->leftName  => 0,
+//			$this->rightName => 0,
+//		] , );
+
+		$node_id = $wpdb->insert_id;
+
+		//get parent left and update it
+		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $parent );
+
+		$diff = $left - ( $parent_left + 1 );
+
+		$left_range = $parent_left + 1;
+
+
+		$query = "UPDATE {$this->table} set {$this->leftName} = case 
+					when {$this->leftName} BETWEEN  {$left} and {$right} then {$this->leftName}-{$diff} 
+					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}+2 
+					else {$this->leftName} end ,
+					
+					{$this->rightName} = case 
+					when {$this->rightName} BETWEEN  {$left} and {$right} then {$this->rightName}-{$diff} 
+					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}+2 
+					else '{$this->rightName}' end 
+					
+					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
+
+
+		$result = $wpdb->query( $query );
+
+		if ( ! empty( $wpdb->last_error ) || ! $result ) {
+			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+					'query' => $query,
+					'error' => $wpdb->last_error,
+				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+
+			return false;
+		}
+
+		// update node
+		$this->update_node( $node_id, ( $left - $diff ), ( $right - $diff ), $parent );
+
+		return $node_id;
+
+	}
 }
