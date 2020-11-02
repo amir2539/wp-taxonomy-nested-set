@@ -41,5 +41,19 @@ function nested_get_term( string $term_id, string $taxonomy = "" ) {
  *                          false if not found
  */
 function nested_update_term( int $term_id, array $args ) {
-	return Nested_Term::update_term( $term_id, $args );
+	$nested_term = new Nested_Term();
+
+	$result = $nested_term->update_term( $term_id, $args );
+	unset( $nested_term );
+
+	return $result;
+}
+
+function nested_delete_term( int $term_id ) {
+	$nested_term = new Nested_Term();
+
+	$result = $nested_term->delete_node( $term_id );
+	unset( $nested_term );
+
+	return $result;
 }

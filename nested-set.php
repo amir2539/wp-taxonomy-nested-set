@@ -29,11 +29,7 @@ function amir_add_nested_set() {
 	}
 
 
-	$term = nested_get_term( 9 );
-
-	$term->update_term( $term, [
-		'parent' => 4,
-	] );
+	nested_delete_term(3);
 
 	die();
 }

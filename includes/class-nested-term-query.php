@@ -182,17 +182,19 @@ class Nested_Term_Query {
 			'term_group',
 		];
 
-
 		$this->query_vars = array_merge( $this->default_query_vars, $args );
 
 //		return $this->get_instance( $args );
 	}
 
 
-	public function get_terms() {
+	/**
+	 * @param array $args
+	 */
+	public function get_terms( $args = [] ) {
 		global $wpdb;
 
-		$args = array_merge( $this->default_query_vars, $this->query_vars );
+		$args = count( $args ) ? $args : array_merge( $this->default_query_vars, $this->query_vars );
 
 		//init clauses and specify to donb't get the taxinomy root
 		$clauses = [
@@ -668,13 +670,14 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	 *
 	 * @param int $term_id
 	 * @param int $new_parent
+	 *
+	 * @return bool|int
 	 */
 	public function re_insert( int $term_id, int $new_parent ) {
 
 		$term = nested_get_term( $term_id );
 
-		//insert new with max left and right
-		//if is new taxonomy create a root
+
 		global $wpdb;
 
 		$parent_left = 0;
@@ -713,9 +716,6 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		$result = $wpdb->query( $query );
 
-		file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
-				'query1' => $query,
-			], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
 
 		if ( ! empty( $wpdb->last_error ) || ! $result ) {
 			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
@@ -758,9 +758,6 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
 
 
-		file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
-				'query2' => $query,
-			], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
 		$result = $wpdb->query( $query );
 
 		// update node
@@ -768,5 +765,78 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		return $node_id;
 
+	}
+
+	/**
+	 * Delete node and fix left and right indexes
+	 *
+	 * @param int $term_id
+	 *
+	 * @return bool
+	 * @global    $wpdb
+	 *
+	 */
+	public function delete_node( $term_id ) {
+		global $wpdb;
+
+
+		$term        = nested_get_term( $term_id );
+		$term_parent = $term->parent;
+
+		//if its a parent node make it's children parent to it's parent
+		$nested    = new Nested_Term();
+		$childrent = $nested->get_children( $term_id );
+
+		$parent_left = 0;
+
+		$max = $this->get_max();
+
+		$right = $max + 2;
+
+		//make left and right 0
+		$wpdb->delete( $this->table, [
+			'id' => $term_id,
+		] );
+
+
+		//get parent left and update it
+		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $term->parent );
+
+		$left_range = $parent_left + 1;
+
+		$query = "UPDATE {$this->table} set {$this->leftName} = case 
+					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}-2 
+					else {$this->leftName} end ,
+					
+					{$this->rightName} = case
+					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}-2 
+					else '{$this->rightName}' end 
+					
+					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
+
+
+		$result = $wpdb->query( $query );
+
+
+		if ( ! empty( $wpdb->last_error ) || ! $result ) {
+			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+					'query' => $query,
+					'error' => $wpdb->last_error,
+				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+
+			return false;
+		}
+
+		return false;
+		//@todo:fix this method
+
+		/** @var Nested_Term $child */
+		foreach ( $childrent as $child ) {
+			$nested->update_term( $child->id, [
+				'parent' => $term_parent,
+			] );
+		}
+
+		return $result;
 	}
 }

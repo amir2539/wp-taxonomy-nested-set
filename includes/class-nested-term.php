@@ -225,17 +225,39 @@ class  Nested_Term {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$parent = $wpdb->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
+		$parent_id = $parent;
+		$parent    = $wpdb->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
 
 		if ( is_null( $parent ) ) {
 			return new WP_Error( 'invalid_term', __( 'Empty Term.' ) );
 		}
 
-		$query = "SELECT * from {$this->table} where parent = {$parent}" . $taxonomy_clause;
+		$query = "SELECT * from {$this->table} where parent = {$parent_id}" . $taxonomy_clause;
 
 		return $wpdb->get_results( $query );
 	}
 
 
+	/**
+	 * Delete term and fix left and right indexes
+	 *
+	 * @param Nested_Term|int $term
+	 *
+	 * @return bool
+	 */
+	public function delete_node( $term ) {
+
+
+		if ( $term instanceof Nested_Term ) {
+			$term_id = $term->id;
+		} else {
+			$term_id = $term;
+		}
+
+		$nested = new Nested_Term_Query();
+
+		return $nested->delete_node( $term_id );
+
+	}
 
 }
