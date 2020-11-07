@@ -24,9 +24,9 @@ class  Nested_Term {
 	/**
 	 * term id.
 	 *
-	 * @var $id
+	 * @var $term_id
 	 */
-	public $id;
+	public $term_id;
 
 	/**
 	 * term's name.
@@ -110,7 +110,7 @@ class  Nested_Term {
 
 	public function __construct() {
 		global $wpdb;
-		$this->table = $wpdb->prefix . "nested_set";
+		$this->table = $wpdb->prefix . "taxonomy_lookup";
 	}
 
 	/**
@@ -128,11 +128,11 @@ class  Nested_Term {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$query = "SELECT * from {$this->table} where id = $id" . $taxonomy_clause;
+		$query = "SELECT * from {$this->table} where term_id = $id" . $taxonomy_clause;
 		$term  = $wpdb->get_row( $query );
 
 		// if term does not found or its taxonomy parent
-		if ( is_null( $term ) || $term->parent == 0 ) {
+		if ( is_null( $term ) ) {
 			return false;
 		}
 		foreach ( get_object_vars( $term ) as $key => $value ) {
@@ -157,7 +157,7 @@ class  Nested_Term {
 
 
 		if ( $term instanceof Nested_Term ) {
-			$term_id = $term->id;
+			$term_id = $term->term_id;
 		} else {
 			$term_id = $term;
 		}
@@ -172,7 +172,7 @@ class  Nested_Term {
 
 		return $wpdb->update( $wpdb->prefix . self::TABLE,
 			$args, [
-				'id' => $term_id,
+				'term_id' => $term_id,
 			] );
 
 	}
@@ -196,7 +196,7 @@ class  Nested_Term {
 			$taxonomy_clause = " and taxonomy = '$taxonomy' ";
 		}
 
-		$parent = $wpdb->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
+		$parent = $wpdb->get_row( "SELECT * from {$this->table} where term_id = {$parent}" . $taxonomy_clause );
 
 		if ( is_null( $parent ) ) {
 			return new WP_Error( 'invalid_term', __( 'Empty Term.' ) );
@@ -231,7 +231,7 @@ class  Nested_Term {
 		}
 
 		$parent_id = $parent;
-		$parent    = $wpdb->get_row( "SELECT * from {$this->table} where id = {$parent}" . $taxonomy_clause );
+		$parent    = $wpdb->get_row( "SELECT * from {$this->table} where term_id = {$parent}" . $taxonomy_clause );
 
 		if ( is_null( $parent ) ) {
 			return new WP_Error( 'invalid_term', __( 'Empty Term.' ) );
@@ -254,7 +254,7 @@ class  Nested_Term {
 
 
 		if ( $term instanceof Nested_Term ) {
-			$term_id = $term->id;
+			$term_id = $term->term_id;
 		} else {
 			$term_id = $term;
 		}

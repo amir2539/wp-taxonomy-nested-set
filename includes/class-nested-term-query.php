@@ -147,7 +147,7 @@ class Nested_Term_Query {
 
 		global $wpdb;
 
-		$this->table = $wpdb->prefix . "nested_set";
+		$this->table = $wpdb->prefix . "taxonomy_lookup";
 
 		$this->default_query_vars = [
 			'taxonomy'          => NULL,
@@ -175,7 +175,7 @@ class Nested_Term_Query {
 
 		//define table fields that when fiekds is set should be in this
 		$this->field_set = [
-			'id',
+			'term_id',
 			'name',
 			'slug',
 			'description',
@@ -233,11 +233,11 @@ class Nested_Term_Query {
 			if ( is_array( $args['include'] && count( $args['include'] ) ) ) {
 				$args['include'] = array_map( 'esc_sql', $args['include'] );
 
-				$clauses[] = " id IN (" . implode( ',', $args['include'] ) . ")";
+				$clauses[] = " term_id IN (" . implode( ',', $args['include'] ) . ")";
 			} elseif ( ! empty( $args['include'] ) ) {
 				$args['include'] = esc_sql( $args['include'] );
 
-				$clauses[] = " id IN (" . $args['include'] . ")";
+				$clauses[] = " term_id IN (" . $args['include'] . ")";
 			}
 
 		}
@@ -249,12 +249,12 @@ class Nested_Term_Query {
 			if ( is_array( $args['exclude'] ) && count( $args['include'] ) ) {
 				$args['exclude'] = array_map( 'esc_sql', $args['exclude'] );
 
-				$clauses[] = " id NOT IN (" . implode( ',', $args['exclude'] ) . ")";
+				$clauses[] = " term_id NOT IN (" . implode( ',', $args['exclude'] ) . ")";
 
 			} elseif ( ! empty( $args['exclude'] ) ) {
 				$args['exclude'] = esc_sql( $args['exclude'] );
 
-				$clauses[] = " id NOT IN (" . $args['exclude'] . ")";
+				$clauses[] = " term_id NOT IN (" . $args['exclude'] . ")";
 			}
 		}
 
@@ -364,7 +364,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 				$field = '*';
 
 			} elseif ( $value == 'ids' || $value == 'tt_ids' ) {
-				$field = 'id';
+				$field = 'term_id';
 
 			} elseif ( $value == 'names' ) {
 				$field = 'name';
@@ -438,7 +438,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 			/** @var Nested_Term $term */
 			foreach ( $terms as $term ) {
-				$result[ $term->id ] = $term->{$associative_fields[ $args['field'] ]};
+				$result[ $term->term_id ] = $term->{$associative_fields[ $args['field'] ]};
 			}
 			$terms = $result;
 		}
@@ -446,7 +446,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		if ( $args['field'] == "all_with_object_id" ) {
 
 			foreach ( $terms as &$term ) {
-				$term_id = $term->id;
+				$term_id = $term->term_id;
 				$term    = (array) $term;
 
 				$object_ids = $wpdb->get_col( "SELECT object_id from {$wpdb->term_relationships} where term_taxonomy_id = {$term_id}" );
@@ -458,8 +458,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		do_action( 'nested_after_get_terms', $terms );
 
-		echo_pre( $query );
-		echo_pre( $terms );
+		return $terms;
 	}
 
 	/**
@@ -510,6 +509,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 
 	/**
+	 * @param int         $term_id
 	 * @param string      $name
 	 * @param string      $slug
 	 * @param string      $taxonomy
@@ -526,7 +526,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	 *                        if there is error in database returns false
 	 */
 	public function insert(
-		string $name, string $slug, string $taxonomy, int $parent = 0,
+		int $term_id, string $name, string $slug, string $taxonomy, int $parent = 0,
 		string $description = NULL, int $term_group = 0, int $count = 0, array $meta = NULL
 	) {
 
@@ -536,15 +536,18 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		$parent_left = 0;
 
-		if ( ! $this->taxonomy_exists( $taxonomy ) ) {
-			$result = $this->make_taxonomy_root( $taxonomy );
-			$max    = $result['right'];
+//		if ( ! $this->taxonomy_exists( $taxonomy ) ) {
+//			$result = $this->make_taxonomy_root( $taxonomy );
+//			$max    = $result['right'];
+//
+//			$parent_left = $max - 1;
+//			$parent      = $result['id'];
+//		} else {
+//			$max = $this->get_max();
+//		}
 
-			$parent_left = $max - 1;
-			$parent      = $result['id'];
-		} else {
-			$max = $this->get_max();
-		}
+		$max = $this->get_max();
+
 
 		$left  = $max + 1;
 		$right = $max + 2;
@@ -554,9 +557,11 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		}
 
 		$wpdb->insert( $this->table, [
+			'term_id'        => $term_id,
 			'name'           => $name,
 			'slug'           => $slug,
 			'taxonomy'       => $taxonomy,
+			'parent'         => $parent,
 			$this->leftName  => $left,
 			$this->rightName => $right,
 			'description'    => $description,
@@ -564,10 +569,10 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			'meta'           => $meta,
 		] );
 
-		$node_id = $wpdb->insert_id;
 
 		//get parent left and update it
-		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $parent );
+//		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $parent );
+		$parent_left = $this->get_parent_left( $parent );
 
 		$diff = $left - ( $parent_left + 1 );
 
@@ -599,9 +604,9 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		}
 
 		// update node
-		$this->update_node( $node_id, ( $left - $diff ), ( $right - $diff ), $parent );
+		$this->update_node( $term_id, ( $left - $diff ), ( $right - $diff ), $parent );
 
-		return $node_id;
+		return $term_id;
 
 	}
 
@@ -623,7 +628,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			$this->rightName => $right,
 			'parent'         => $parent,
 		], [
-			'id' => $id,
+			'term_id' => $id,
 		] );
 	}
 
@@ -665,7 +670,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	private function get_parent_left( int $parent ): int {
 		global $wpdb;
 
-		$left = $wpdb->get_var( "SELECT {$this->leftName} from {$this->table} where id = {$parent}" );
+		$left = $wpdb->get_var( "SELECT {$this->leftName} from {$this->table} where term_id = {$parent}" );
 
 		return $left ?? 0;
 	}
@@ -683,7 +688,6 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		$term = nested_get_term( $term_id );
 
-
 		global $wpdb;
 
 		$parent_left = 0;
@@ -695,42 +699,43 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		//make left and right 0
 		$wpdb->update( $this->table, [
-			$this->leftName  => 0,
-			$this->rightName => 0,
+			$this->leftName  => $left,
+			$this->rightName => $right,
 		], [
-			'id' => $term_id,
+			'term_id' => $term_id,
 		] );
 
 
 		$node_id = $term_id;
 
-		//get parent left and update it
-		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $term->parent );
 
-		$left_range = $parent_left + 1;
-
-		$query = "UPDATE {$this->table} set {$this->leftName} = case 
-					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}-2 
-					else {$this->leftName} end ,
-					
-					{$this->rightName} = case
-					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}-2 
-					else '{$this->rightName}' end 
-					
-					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
-
-
-		$result = $wpdb->query( $query );
-
-
-		if ( ! empty( $wpdb->last_error ) || ! $result ) {
-			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
-					'query' => $query,
-					'error' => $wpdb->last_error,
-				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
-
-			return false;
-		}
+//		//get parent left and update it
+//		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $term->parent );
+//
+//		$left_range = $parent_left + 1;
+//
+//		$query = "UPDATE {$this->table} set {$this->leftName} = case
+//					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}-2
+//					else {$this->leftName} end ,
+//
+//					{$this->rightName} = case
+//					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}-2
+//					else '{$this->rightName}' end
+//
+//					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
+//
+//
+//		$result = $wpdb->query( $query );
+//
+//
+//		if ( ! empty( $wpdb->last_error ) || ! $result ) {
+//			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+//					'query' => $query,
+//					'error' => $wpdb->last_error,
+//				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+//
+//			return false;
+//		}
 
 		$max = $this->get_max();
 
@@ -742,7 +747,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			$this->leftName  => $left,
 			$this->rightName => $right,
 		], [
-			'id' => $term_id,
+			'term_id' => $term_id,
 		] );
 		//get parent left and update it
 		$parent_left = $this->get_parent_left( $new_parent );
@@ -766,8 +771,24 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		$result = $wpdb->query( $query );
 
+		if ( ! empty( $wpdb->last_error ) || ! $result ) {
+			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
+					'query' => $query,
+					'error' => $wpdb->last_error,
+				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+
+			return false;
+		}
+
+
 		// update node
 		$this->update_node( $node_id, ( $left - $diff ), ( $right - $diff ), $new_parent );
+
+		//update all children
+		$chidlren = $wpdb->get_results( "SELECT * from {$this->table} where parent = {$term_id}" );
+		foreach ( $chidlren as $child ) {
+			$this->re_insert( $child->term_id, $term_id );
+		}
 
 		return $node_id;
 
@@ -790,59 +811,17 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		$term_parent = $term->parent;
 
 		//if its a parent node make it's children parent to it's parent
-		$nested    = new Nested_Term();
-		$childrent = $nested->get_children( $term_id );
 
-		$parent_left = 0;
-
-		$max = $this->get_max();
-
-		$right = $max + 2;
-
-		//make left and right 0
 		$wpdb->delete( $this->table, [
-			'id' => $term_id,
+			'term_id' => $term_id,
 		] );
 
+		return $wpdb->update( $this->table, [
+			'parent' => $term_parent,
+		], [
+			'parent' => $term_id,
+		] );
 
-		//get parent left and update it
-		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $term->parent );
-
-		$left_range = $parent_left + 1;
-
-		$query = "UPDATE {$this->table} set {$this->leftName} = case 
-					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}-2 
-					else {$this->leftName} end ,
-					
-					{$this->rightName} = case
-					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}-2 
-					else '{$this->rightName}' end 
-					
-					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
-
-
-		$result = $wpdb->query( $query );
-
-
-		if ( ! empty( $wpdb->last_error ) || ! $result ) {
-			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
-					'query' => $query,
-					'error' => $wpdb->last_error,
-				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
-
-			return false;
-		}
-
-		return false;
-		//@todo:fix this method
-
-		/** @var Nested_Term $child */
-		foreach ( $childrent as $child ) {
-			$nested->update_term( $child->id, [
-				'parent' => $term_parent,
-			] );
-		}
-
-		return $result;
 	}
+
 }

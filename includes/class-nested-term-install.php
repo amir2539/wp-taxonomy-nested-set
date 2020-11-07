@@ -31,7 +31,7 @@ class Nested_Term_Install {
 	 */
 	public function __construct() {
 		global $wpdb;
-		$this->table = $wpdb->prefix . "nested_set";
+		$this->table = $wpdb->prefix . "taxonomy_lookup";
 	}
 
 
@@ -39,7 +39,7 @@ class Nested_Term_Install {
 
 		$max_index_length = 191;
 		$query            = "CREATE TABLE {$this->table} (
-		id bigint(20) unsigned NOT NULL auto_increment,
+		term_id bigint(20) unsigned NOT NULL ,
  		name varchar(200) NOT NULL default '',
  		slug varchar(200) NOT NULL default '',
  		{$this->leftName} int(20) NOT NULL default 0,
@@ -66,18 +66,21 @@ class Nested_Term_Install {
 	public function move_terms() {
 		global $wpdb;
 
-		$query = "SELECT * from {$wpdb->terms} as t inner join {$wpdb->term_taxonomy} as tt on t.term_id = tt.term_id";
+		session_start();
+		session_destroy();
+
+		$url    = "//{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+		$limit  = 10;
+		$offset = $_GET['offset'] ?? 0;
+
+		$query = "SELECT * from {$wpdb->terms} as t inner join {$wpdb->term_taxonomy} as tt on t.term_id = tt.term_id ";
 
 		$terms = $wpdb->get_results( $query );
-
-		$parents = [];
 
 		$nested = new Nested_Term_Query();
 
 		/** @var WP_Term $term */
 		foreach ( $terms as $term ) {
-
-			$parent = isset( $parents[ $term->parent ] ) ? $parents[ $term->parent ] : 0;
 
 			$metas = [];
 			$meta  = $wpdb->get_results( "SELECT meta_key, meta_value from {$wpdb->termmeta} where term_id  = {$term->term_id}" );
@@ -85,9 +88,16 @@ class Nested_Term_Install {
 				$metas[ $item->meta_key ] = $item->meta_value;
 			}
 
-			$node_id = $nested->insert( $term->name, $term->slug, $term->taxonomy, $parent, $term->description, $term->term_group, $term->count, $metas );
+			$nested->insert( $term->term_id, $term->name, $term->slug, $term->taxonomy, $term->parent, $term->description, $term->term_group
+				, $term->count, $metas );
 
-			$parents[ $term->term_id ] = $node_id;
+		}
+
+		foreach ( $terms as $term ) {
+			$chidlren = $wpdb->get_results( "SELECT * from {$this->table} where parent = {$term->term_id}" );
+			foreach ( $chidlren as $child ) {
+				$nested->re_insert( $child->term_id, $child->parent );
+			}
 		}
 	}
 
@@ -107,8 +117,20 @@ class Nested_Term_Install {
 			return false;
 		}
 
-
 		$this->install();
+	}
+
+
+	public function fix_tree() {
+
+		global $wpdb;
+		$terms = $wpdb->get_results( "SELECT * FROM {$this->table}" );
+
+		$nested = new Nested_Term_Query();
+		foreach ( $terms as $term ) {
+			$nested->re_insert( $term->term_id, $term->parent );
+		}
+
 	}
 
 }

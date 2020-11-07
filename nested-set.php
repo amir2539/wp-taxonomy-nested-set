@@ -21,6 +21,11 @@ function amir_add_nested_set() {
 
 	if ( isset( $_GET['move'] ) ) {
 
+//		nested_move_terms();
+
+		$install = new Nested_Term_Install();
+		$install->fix_tree();
+		exit();
 
 	}
 
