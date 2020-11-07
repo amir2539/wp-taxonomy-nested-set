@@ -57,3 +57,11 @@ function nested_delete_term( int $term_id ) {
 
 	return $result;
 }
+
+function nested_get_ancestors( int $term_id ) {
+	$nested_term = new Nested_Term_Query();
+	$terms       = $nested_term->get_ancestors( $term_id );
+	unset( $nested_term );
+
+	return $terms;
+}

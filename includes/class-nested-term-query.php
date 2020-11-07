@@ -824,4 +824,37 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 	}
 
+	/**
+	 * get ancestors of giver term id
+	 *
+	 * @param int $term_id
+	 *
+	 * @return array return array of Nested_term objects
+	 *
+	 * @global    $wpdb
+	 */
+	public function get_ancestors( int $term_id ) {
+		global $wpdb;
+
+		$terms = new Nested_Term();
+
+		$term = $terms->get_instance( $term_id );
+
+		$query     = "SELECT * FROM {$this->table} where {$this->leftName} < {$term->left} AND {$this->rightName} > {$term->right}";
+		$ancestors = $wpdb->get_results( $query );
+
+		$result = [];
+		foreach ( $ancestors as $ancetor ) {
+			$ancetor          = (array) $ancetor;
+			$ancetor['left']  = $ancetor[ $this->leftName ];
+			$ancetor['right'] = $ancetor[ $this->rightName ];
+
+			$ancetor  = (object) $ancetor;
+			$result[] = $ancetor;
+
+		}
+
+		return $result;
+	}
+
 }

@@ -23,8 +23,8 @@ function amir_add_nested_set() {
 
 //		nested_move_terms();
 
-		$install = new Nested_Term_Install();
-		$install->fix_tree();
+//		$install = new Nested_Term_Install();
+//		$install->fix_tree();
 		exit();
 
 	}
@@ -34,7 +34,7 @@ function amir_add_nested_set() {
 	}
 
 
-	nested_delete_term( 3 );
+	echo_pre(nested_get_ancestors(10));
 
 	die();
 }
