@@ -16,10 +16,11 @@ class  Nested_Term {
 	/**
 	 * nested set table name
 	 *  wpdv->prefix . nested_set
+	 *
 	 * @var string $table
 	 */
-	public $table ;
-	const TABLE = "nested_set";
+	public $table;
+	const TABLE = "wp_taxonomy_lookup";
 
 	/**
 	 * term id.
@@ -155,12 +156,17 @@ class  Nested_Term {
 	public function update_term( $term, array $args ) {
 		global $wpdb;
 
-
 		if ( $term instanceof Nested_Term ) {
 			$term_id = $term->term_id;
 		} else {
 			$term_id = $term;
 		}
+
+		$term = $this->get_instance( $term_id );
+		//compare what fields have hcanged
+
+		$args = $this->array_compare( (array) $term, (array) $args );
+
 
 		if ( isset( $args['parent'] ) && intval( $args['parent'] ) > 0 ) {
 			$nested_query = new Nested_Term_Query();
@@ -170,11 +176,22 @@ class  Nested_Term {
 		unset( $args['parent'] );
 		unset( $args['count'] );
 
-		return $wpdb->update( $wpdb->prefix . self::TABLE,
+		return $wpdb->update( $this->table,
 			$args, [
 				'term_id' => $term_id,
 			] );
+	}
 
+	private function array_compare( array $arr1, array $arr2 ) {
+		$result = [];
+
+		foreach ( $arr1 as $key => $value ) {
+			if ( $arr2[ $key ] != $value && isset( $arr2[ $key ] ) ) {
+				$result[ $key ] = $arr2[ $key ];
+			}
+		}
+
+		return $result;
 	}
 
 

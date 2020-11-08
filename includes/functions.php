@@ -5,20 +5,6 @@
  * Author Uri : amirtorkaman.ir
  **/
 
-
-/**
- * @param string $taxonomy taxonomy name
- *
- * @return bool false when taxonomy does not exists
- *              true when taxonomy exists
- */
-function nested_taxonomy_exists( string $taxonomy ): bool {
-
-	$nested_term_query = Nested_Term_Query::get_instance();
-
-	return $nested_term_query->taxonomy_exists( $taxonomy );
-}
-
 /**
  * @param string $term_id
  * @param string $taxonomy
