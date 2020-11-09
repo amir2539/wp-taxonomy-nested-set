@@ -14,6 +14,11 @@ class Nested_Term_Hooks {
 		add_action( 'edited_term', [ $this, 'edit_term' ], 10, 3 );
 		add_action( 'delete_term', [ $this, 'delete_term' ], 10, 5 );
 
+		add_filter( 'woocommerce_get_product_subcategories_cache_key', [
+			$this,
+			'woocommerce_get_product_subcategories_cache_key',
+		], 10, 2 );
+
 	}
 
 	/**
@@ -54,6 +59,39 @@ class Nested_Term_Hooks {
 
 		nested_delete_term( $term_id );
 	}
+
+
+
+	public function woocommerce_get_product_subcategories_cache_key( $key, $parent_id ) {
+
+		$data = mcache()->get( $key );
+
+		if ( $data === false ) {
+
+			$nested = new Nested_Term();
+			$data   = apply_filters('woocommerce_product_subcategories_args',$nested->get_all_children( $parent_id ));
+
+//			$data = get_categories(
+//				apply_filters(
+//					'woocommerce_product_subcategories_args',
+//					array(
+//						'parent'       => $parent_id,
+//						'hide_empty'   => 0,
+//						'hierarchical' => 1,
+//						'taxonomy'     => 'product_cat',
+//						'pad_counts'   => 1,
+//					)
+//				)
+//			);
+
+			mcache()->set( $key, $data, DAY_IN_SECONDS );
+		}
+
+		wp_cache_set( $key, $data, 'product_cat' );
+
+		return $key;
+	}
+
 
 }
 
