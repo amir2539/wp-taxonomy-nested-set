@@ -507,6 +507,13 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		return is_null( $taxonomy ) ? false : true;
 	}
 
+	private function term_exists( int $term_id ): bool {
+		global $wpdb;
+
+		$term = $wpdb->get_row( "SELECT term_id from {$this->table} where term_id = {$term_id}" );
+
+		return ! is_null( $term );
+	}
 
 	/**
 	 * @param int         $term_id
@@ -533,6 +540,13 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		//insert new with max left and right
 		//if is new taxonomy create a root
 		global $wpdb;
+
+		if ( $this->term_exists( $term_id ) ) {
+			return  false;
+		}
+
+		//cehck term_exists
+		//if exists return
 
 		$parent_left = 0;
 

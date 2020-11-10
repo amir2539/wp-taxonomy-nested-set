@@ -13,7 +13,8 @@ include "includes/class-nested-term.php";
 include "includes/class-nested-term-query.php";
 include "includes/functions.php";
 include "includes/move-terms.php";
-include "includes/hooks.php";
+include "includes/class-nested-term-hooks.php";
+include "includes/class-nested-admin.php";
 
 add_action( 'init', 'amir_add_nested_set' );
 

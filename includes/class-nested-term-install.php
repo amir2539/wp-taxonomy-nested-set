@@ -32,7 +32,10 @@ class Nested_Term_Install {
 	public function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->prefix . "taxonomy_lookup";
+
+
 	}
+
 
 
 	public function install() {
@@ -99,6 +102,8 @@ class Nested_Term_Install {
 				$nested->re_insert( $child->term_id, $child->parent );
 			}
 		}
+
+
 	}
 
 	/**
@@ -117,7 +122,7 @@ class Nested_Term_Install {
 			return false;
 		}
 
-		$this->install();
+		$this->move_terms();
 	}
 
 
