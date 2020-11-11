@@ -537,31 +537,18 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		string $description = NULL, int $term_group = 0, int $count = 0, array $meta = NULL
 	) {
 
-		//insert new with max left and right
-		//if is new taxonomy create a root
+		//cehck term_exists
+		//if exists return
 		global $wpdb;
 
 		if ( $this->term_exists( $term_id ) ) {
-			return  false;
+			return false;
 		}
 
-		//cehck term_exists
-		//if exists return
-
+		//insert new with max left and right
 		$parent_left = 0;
 
-//		if ( ! $this->taxonomy_exists( $taxonomy ) ) {
-//			$result = $this->make_taxonomy_root( $taxonomy );
-//			$max    = $result['right'];
-//
-//			$parent_left = $max - 1;
-//			$parent      = $result['id'];
-//		} else {
-//			$max = $this->get_max();
-//		}
-
 		$max = $this->get_max();
-
 
 		$left  = $max + 1;
 		$right = $max + 2;
@@ -581,11 +568,11 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			'description'    => $description,
 			'term_group'     => $term_group,
 			'meta'           => $meta,
+			'count'          => $count,
 		] );
 
 
 		//get parent left and update it
-//		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $parent );
 		$parent_left = $this->get_parent_left( $parent );
 
 		$diff = $left - ( $parent_left + 1 );

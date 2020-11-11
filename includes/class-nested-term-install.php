@@ -37,8 +37,9 @@ class Nested_Term_Install {
 	}
 
 
-
 	public function install() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
 
 		$max_index_length = 191;
 		$query            = "CREATE TABLE {$this->table} (
@@ -53,12 +54,12 @@ class Nested_Term_Install {
  		count bigint(20) NOT NULL default 0,
  		term_group bigint(10) NOT NULL default 0,
  		meta JSON default NULL,
-		PRIMARY KEY id (id),
-		KEY slug (slug($max_index_length)),
- 		KEY name (name($max_index_length))
-		) CHARACTER SET utf8 COLLATE utf8_general_ci;";
+		PRIMARY KEY term_id (term_id),
+		KEY slug (slug),
+ 		KEY name (name)
+		) {$charset_collate}";
 
-		@dbDelta( $query );
+		dbDelta( $query );
 
 		$this->move_terms();
 	}
@@ -69,8 +70,6 @@ class Nested_Term_Install {
 	public function move_terms() {
 		global $wpdb;
 
-		session_start();
-		session_destroy();
 
 		$url    = "//{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
 		$limit  = 10;
