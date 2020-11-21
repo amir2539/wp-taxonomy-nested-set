@@ -51,3 +51,9 @@ function nested_get_ancestors( int $term_id ) {
 
 	return $terms;
 }
+
+function nested_get_hierarchy( int $term_id ) {
+	$nested_term = new Nested_Term();
+
+	return $nested_term->get_hierarchy( $term_id );
+}

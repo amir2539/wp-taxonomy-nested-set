@@ -282,4 +282,32 @@ class  Nested_Term {
 
 	}
 
+	/**
+	 * @param Nested_Term| int $term
+	 *
+	 * @global                 $wpdb
+	 */
+	public function get_hierarchy( $term ) {
+		global $wpdb;
+
+		if ( ! ( $term instanceof Nested_Term ) ) {
+			$term = $this->get_instance( $term );
+		}
+
+		$results = $wpdb->get_results( "SELECT * FROM {$this->table} where {$this->leftName} =< {$term->left} AND {$this->rightName} >= {$term->right}
+		orderby {$this->leftName} ASC" );
+
+		$result = [];
+		foreach ( $results as $term ) {
+			$term          = (array) $term;
+			$term['left']  = $term[ $this->leftName ];
+			$term['right'] = $term[ $this->rightName ];
+
+			$term     = (object) $term;
+			$result[] = $term;
+		}
+
+		return $result;
+
+	}
 }
