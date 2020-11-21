@@ -294,8 +294,9 @@ class  Nested_Term {
 			$term = $this->get_instance( $term );
 		}
 
-		$results = $wpdb->get_results( "SELECT * FROM {$this->table} where {$this->leftName} =< {$term->left} AND {$this->rightName} >= {$term->right}
-		orderby {$this->leftName} ASC" );
+		$query   = "SELECT * FROM {$this->table} where {$this->leftName} <= {$term->left} AND {$this->rightName} >= {$term->right}
+		order by {$this->leftName} ASC";
+		$results = $wpdb->get_results( $query );
 
 		$result = [];
 		foreach ( $results as $term ) {
