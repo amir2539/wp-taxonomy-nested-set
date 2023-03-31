@@ -16,7 +16,7 @@ class NEsted_Term_Admin {
 	}
 
 	public function fixtree() {
-		if ( isset( $_POST['neste_term_action'] ) && $_POST['neste_term_action'] == 'fixtree-nested-term' ) {
+		if ( isset( $_POST['nested_term_action'] ) && $_POST['nested_term_action'] == 'fixtree-nested-term' ) {
 			$this->set_headers();
 
 			$nested_term = new Nested_Term_Install();
@@ -28,7 +28,7 @@ class NEsted_Term_Admin {
 	}
 
 	public function install_nested_terms() {
-		if ( isset( $_POST['neste_term_action'] ) && $_POST['neste_term_action'] == 'install-nested-term' ) {
+		if ( isset( $_POST['nested_term_action'] ) && $_POST['nested_term_action'] == 'install-nested-term' ) {
 			$this->set_headers();
 
 			$nested_term = new Nested_Term_Install();
