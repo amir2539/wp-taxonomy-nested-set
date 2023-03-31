@@ -32,8 +32,6 @@ class Nested_Term_Install {
 	public function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->prefix . "taxonomy_lookup";
-
-
 	}
 
 
@@ -83,16 +81,22 @@ class Nested_Term_Install {
 
 		/** @var WP_Term $term */
 		foreach ( $terms as $term ) {
-
 			$metas = [];
 			$meta  = $wpdb->get_results( "SELECT meta_key, meta_value from {$wpdb->termmeta} where term_id  = {$term->term_id}" );
 			foreach ( $meta as $item ) {
 				$metas[ $item->meta_key ] = $item->meta_value;
 			}
 
-			$nested->insert( $term->term_id, $term->name, $term->slug, $term->taxonomy, $term->parent, $term->description, $term->term_group
-				, $term->count, $metas );
-
+			$nested->insert( $term->term_id,
+				$term->name,
+				$term->slug,
+				$term->taxonomy,
+				$term->parent,
+				$term->description,
+				$term->term_group
+				,
+				$term->count,
+				$metas );
 		}
 
 		foreach ( $terms as $term ) {
@@ -101,8 +105,6 @@ class Nested_Term_Install {
 				$nested->re_insert( $child->term_id, $child->parent );
 			}
 		}
-
-
 	}
 
 	/**
@@ -113,7 +115,6 @@ class Nested_Term_Install {
 		$query = "TRUNCATE TABLE `$this->table`";
 
 		try {
-
 			$wpdb->query( $query );
 		} catch ( Exception $ex ) {
 			echo $ex->getMessage();
@@ -126,7 +127,6 @@ class Nested_Term_Install {
 
 
 	public function fix_tree() {
-
 		global $wpdb;
 		$terms = $wpdb->get_results( "SELECT * FROM {$this->table}" );
 
@@ -134,7 +134,6 @@ class Nested_Term_Install {
 		foreach ( $terms as $term ) {
 			$nested->re_insert( $term->term_id, $term->parent );
 		}
-
 	}
 
 }
