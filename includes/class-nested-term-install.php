@@ -2,7 +2,6 @@
 /**
  * Developer : AmirMohammad Torkaman
  * Email : amirtorkaman5204@gmail.com
- * Author Uri : amirtorkaman.ir
  **/
 
 require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );

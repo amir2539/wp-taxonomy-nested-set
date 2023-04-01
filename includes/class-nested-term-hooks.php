@@ -2,7 +2,6 @@
 /**
  * Developer : AmirMohammad Torkaman
  * Email : amirtorkaman5204@gmail.com
- * Author Uri : amirtorkaman.ir
  **/
 
 class Nested_Term_Hooks {

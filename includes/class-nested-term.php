@@ -2,7 +2,6 @@
 /**
  * Developer : AmirMohammad Torkaman
  * Email : amirtorkaman5204@gmail.com
- * Author Uri : amirtorkaman.ir
  **/
 
 defined( 'ABSPATH' ) || exit;
