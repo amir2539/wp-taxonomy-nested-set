@@ -14,12 +14,13 @@ class  Nested_Term {
 
 	/**
 	 * nested set table name
-	 *  wpdv->prefix . nested_set
+	 *  wpdb->prefix . nested_set
 	 *
 	 * @var string $table
 	 */
 	public $table;
-	const TABLE = "wp_taxonomy_lookup";
+
+	const TABLE_NAME = 'taxonomy_lookup';
 
 	/**
 	 * term id.
@@ -43,7 +44,7 @@ class  Nested_Term {
 	public $slug;
 
 	/**
-	 * $term's taxonomy.
+	 * term's taxonomy.
 	 *
 	 * @var $taxonomy
 	 */
@@ -71,7 +72,7 @@ class  Nested_Term {
 	public $term_group;
 
 	/**
-	 * term;s left index.
+	 * term's left index.
 	 *
 	 * @var $left
 	 */
@@ -110,7 +111,7 @@ class  Nested_Term {
 
 	public function __construct() {
 		global $wpdb;
-		$this->table = $wpdb->prefix . "taxonomy_lookup";
+		$this->table = sprintf( "%s%s", $wpdb->prefix, self::TABLE_NAME );
 	}
 
 	/**
@@ -118,9 +119,9 @@ class  Nested_Term {
 	 * @param string $taxonomy
 	 *
 	 * @return array|bool|object return false if term does not exists
-	 *                           return Nesterm_Terms object if find
+	 *                           return Nested_Terms object if found
 	 */
-	public function get_instance( $id, string $taxonomy = "" ) {
+	public function get_instance( $id, string $taxonomy = "" ): bool|Nested_Term {
 		global $wpdb;
 
 		$taxonomy_clause = "";
@@ -145,14 +146,13 @@ class  Nested_Term {
 		return $this;
 	}
 
-
 	/**
 	 * @param Nested_Term|int $term
-	 * @param array           $args
+	 * @param array $args
 	 *
-	 * @return bool|Nested_Term
+	 * @return bool|Nested_Term|int
 	 */
-	public function update_term( $term, array $args ) {
+	public function update_term( $term, array $args ): bool|Nested_Term|int {
 		global $wpdb;
 
 		if ( $term instanceof Nested_Term ) {
@@ -162,10 +162,8 @@ class  Nested_Term {
 		}
 
 		$term = $this->get_instance( $term_id );
-		//compare what fields have hcanged
-
-		$args = $this->array_compare( (array) $term, (array) $args );
-
+		//compare what fields have changed
+		$args = $this->array_compare( (array) $term, $args );
 
 		if ( isset( $args['parent'] ) && intval( $args['parent'] ) > 0 ) {
 			$nested_query = new Nested_Term_Query();
@@ -181,7 +179,13 @@ class  Nested_Term {
 			] );
 	}
 
-	private function array_compare( array $arr1, array $arr2 ) {
+	/**
+	 * @param array $arr1
+	 * @param array $arr2
+	 *
+	 * @return array
+	 */
+	private function array_compare( array $arr1, array $arr2 ): array {
 		$result = [];
 
 		foreach ( $arr1 as $key => $value ) {
@@ -195,9 +199,9 @@ class  Nested_Term {
 
 
 	/**
-	 * returns all of children of given id in all levels
+	 * returns all children of given id in all levels
 	 *
-	 * @param int    $parent
+	 * @param int $parent
 	 *
 	 * @param string $taxonomy
 	 *
@@ -231,7 +235,7 @@ class  Nested_Term {
 	/**
 	 * return one level children
 	 *
-	 * @param int    $parent
+	 * @param int $parent
 	 *
 	 * @param string $taxonomy
 	 *
@@ -264,11 +268,9 @@ class  Nested_Term {
 	 *
 	 * @param Nested_Term|int $term
 	 *
-	 * @return bool
+	 * @return bool|int
 	 */
-	public function delete_node( $term ) {
-
-
+	public function delete_node( $term ): int|bool {
 		if ( $term instanceof Nested_Term ) {
 			$term_id = $term->term_id;
 		} else {
@@ -278,15 +280,15 @@ class  Nested_Term {
 		$nested = new Nested_Term_Query();
 
 		return $nested->delete_node( $term_id );
-
 	}
 
 	/**
 	 * @param Nested_Term| int $term
 	 *
+	 * @return array
 	 * @global                 $wpdb
 	 */
-	public function get_hierarchy( $term ) {
+	public function get_hierarchy( $term ): array {
 		global $wpdb;
 
 		if ( ! ( $term instanceof Nested_Term ) ) {
@@ -295,6 +297,7 @@ class  Nested_Term {
 
 		$query   = "SELECT * FROM {$this->table} where {$this->leftName} <= {$term->left} AND {$this->rightName} >= {$term->right}
 		order by {$this->leftName} ASC";
+
 		$results = $wpdb->get_results( $query );
 
 		$result = [];
@@ -308,6 +311,5 @@ class  Nested_Term {
 		}
 
 		return $result;
-
 	}
 }
