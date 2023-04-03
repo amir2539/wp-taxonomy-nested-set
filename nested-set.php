@@ -13,4 +13,4 @@ include 'includes/class-nested-term-query.php';
 include 'includes/functions.php';
 include 'includes/move-terms.php';
 include 'includes/class-nested-term-hooks.php';
-include 'includes/admin/class-nested-admin.php';
+include 'includes/class-nested-admin.php';
