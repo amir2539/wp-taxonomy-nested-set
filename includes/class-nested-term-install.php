@@ -67,11 +67,6 @@ class Nested_Term_Install {
 	public function move_terms() {
 		global $wpdb;
 
-
-		$url    = "//{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
-		$limit  = 10;
-		$offset = $_GET['offset'] ?? 0;
-
 		$query = "SELECT * from {$wpdb->terms} as t inner join {$wpdb->term_taxonomy} as tt on t.term_id = tt.term_id ";
 
 		$terms = $wpdb->get_results( $query );
@@ -107,25 +102,11 @@ class Nested_Term_Install {
 	}
 
 	/**
-	 * empty table and fill it again with terms
+	 * Fix tree hierarchy
+	 *
+	 * @return void
 	 */
-	public function re_intsall() {
-		global $wpdb;
-		$query = "TRUNCATE TABLE `$this->table`";
-
-		try {
-			$wpdb->query( $query );
-		} catch ( Exception $ex ) {
-			echo $ex->getMessage();
-
-			return false;
-		}
-
-		$this->move_terms();
-	}
-
-
-	public function fix_tree() {
+	public function fix_tree(): void {
 		global $wpdb;
 		$terms = $wpdb->get_results( "SELECT * FROM {$this->table}" );
 
