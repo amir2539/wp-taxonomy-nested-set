@@ -2,7 +2,6 @@
 /**
  * Developer : AmirMohammad Torkaman
  * Email : amirtorkaman5204@gmail.com
- * Author Uri : amirtorkaman.ir
  **/
 
 require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -32,8 +31,6 @@ class Nested_Term_Install {
 	public function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->prefix . "taxonomy_lookup";
-
-
 	}
 
 
@@ -70,11 +67,6 @@ class Nested_Term_Install {
 	public function move_terms() {
 		global $wpdb;
 
-
-		$url    = "//{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
-		$limit  = 10;
-		$offset = $_GET['offset'] ?? 0;
-
 		$query = "SELECT * from {$wpdb->terms} as t inner join {$wpdb->term_taxonomy} as tt on t.term_id = tt.term_id ";
 
 		$terms = $wpdb->get_results( $query );
@@ -83,16 +75,22 @@ class Nested_Term_Install {
 
 		/** @var WP_Term $term */
 		foreach ( $terms as $term ) {
-
 			$metas = [];
 			$meta  = $wpdb->get_results( "SELECT meta_key, meta_value from {$wpdb->termmeta} where term_id  = {$term->term_id}" );
 			foreach ( $meta as $item ) {
 				$metas[ $item->meta_key ] = $item->meta_value;
 			}
 
-			$nested->insert( $term->term_id, $term->name, $term->slug, $term->taxonomy, $term->parent, $term->description, $term->term_group
-				, $term->count, $metas );
-
+			$nested->insert( $term->term_id,
+				$term->name,
+				$term->slug,
+				$term->taxonomy,
+				$term->parent,
+				$term->description,
+				$term->term_group
+				,
+				$term->count,
+				$metas );
 		}
 
 		foreach ( $terms as $term ) {
@@ -101,32 +99,14 @@ class Nested_Term_Install {
 				$nested->re_insert( $child->term_id, $child->parent );
 			}
 		}
-
-
 	}
 
 	/**
-	 * empty table and fill it again with terms
+	 * Fix tree hierarchy
+	 *
+	 * @return void
 	 */
-	public function re_intsall() {
-		global $wpdb;
-		$query = "TRUNCATE TABLE `$this->table`";
-
-		try {
-
-			$wpdb->query( $query );
-		} catch ( Exception $ex ) {
-			echo $ex->getMessage();
-
-			return false;
-		}
-
-		$this->move_terms();
-	}
-
-
-	public function fix_tree() {
-
+	public function fix_tree(): void {
 		global $wpdb;
 		$terms = $wpdb->get_results( "SELECT * FROM {$this->table}" );
 
@@ -134,7 +114,6 @@ class Nested_Term_Install {
 		foreach ( $terms as $term ) {
 			$nested->re_insert( $term->term_id, $term->parent );
 		}
-
 	}
 
 }
