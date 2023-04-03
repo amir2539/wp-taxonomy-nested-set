@@ -18,8 +18,6 @@ class Nested_Term_Hooks {
 	}
 
 	/**
-	 * calls after new term created
-	 *
 	 * @param int $term_id
 	 */
 	public function create_term( int $term_id ): void {
@@ -48,8 +46,6 @@ class Nested_Term_Hooks {
 
 	/**
 	 * @param int $term_id
-	 * @param int $tt_id
-	 * @param string $taxonomy
 	 */
 	public function edit_term( int $term_id ) {
 		$term = get_term( $term_id );
@@ -57,30 +53,39 @@ class Nested_Term_Hooks {
 		nested_update_term( $term_id, (array) $term );
 	}
 
+	/**
+	 * @param $term_id
+	 *
+	 * @return void
+	 */
 	public function delete_term( $term_id ) {
 		nested_delete_term( $term_id );
 	}
 
-
+	/**
+	 * @param $key
+	 * @param $parent_id
+	 *
+	 * @return mixed
+	 */
 	public function woocommerce_get_product_subcategories_cache_key( $key, $parent_id ) {
-		$data = mcache()->get( $key );
+		global $wp_object_cache;
+
+		$data = $wp_object_cache->get( $key );
 
 		if ( $data === false ) {
 			$nested = new Nested_Term();
 			$data   = apply_filters( 'woocommerce_product_subcategories_args',
 				$nested->get_all_children( $parent_id ) );
 
-			mcache()->set( $key, $data, DAY_IN_SECONDS );
+			$wp_object_cache->set( $key, $data, 'default', DAY_IN_SECONDS );
 		}
 
-		wp_cache_set( $key, $data, 'product_cat' );
+		$wp_object_cache->set( $key, $data, 'product_cat' );
 
 		return $key;
 	}
-
-
 }
-
 
 new Nested_Term_Hooks();
 
