@@ -7,7 +7,6 @@
 
 class Nested_Term_Query {
 
-
 	/**
 	 * Container for the main instance of the class.
 	 *
@@ -186,7 +185,6 @@ class Nested_Term_Query {
 		];
 
 		$this->query_vars = array_merge( $this->default_query_vars, $args );
-//		return $this->get_instance( $args );
 	}
 
 
@@ -198,30 +196,30 @@ class Nested_Term_Query {
 
 		$args = count( $args ) ? $args : array_merge( $this->default_query_vars, $this->query_vars );
 
-		//init clauses and specify to donb't get the taxinomy root
+		// init clauses and specify to don't get the taxonomy root
 		$clauses = [
 			'parent <> 0',
 		];
 
 		$args = apply_filters( 'nested_pre_get_terms', $args );
 
-		//check args taxonomy is set and is rray or string
+		// Check args taxonomy is set and is array or string
 		if ( ! empty( $args['taxonomy'] ) ) {
 			if ( is_array( $args['taxonomy'] ) ) {
 				$args['taxonomy'] = array_map( 'esc_sql', $args['taxonomy'] );
-				$clauses[]        = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
 			} else {
 				$args['taxonomy'] = array_map( 'esc_sql', explode( ',', $args['taxonomy'] ) );
-				$clauses[]        = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
 			}
+
+			$clauses[] = " taxonomy IN ('" . implode( "','", $args['taxonomy'] ) . "')";
 		}
 
-		//check if hide_empty = true hide count = 0
+		// Check if hide_empty = true hide count = 0
 		if ( $args['hide_empty'] ) {
 			$clauses[] = " count > 0";
 		}
 
-		//cehck include term ids if is set any
+		// Check include term ids if is set any
 		if ( is_array( $args['include'] ) ) {
 			if ( is_array( $args['include'] && count( $args['include'] ) ) ) {
 				$args['include'] = array_map( 'esc_sql', $args['include'] );
@@ -234,7 +232,7 @@ class Nested_Term_Query {
 			}
 		}
 
-		//cehck exclude term ids if is set any
+		// Check exclude term ids if is set any
 		if ( is_array( $args['exclude'] ) && count( $args['exclude'] ) ) {
 			if ( is_array( $args['exclude'] ) && count( $args['include'] ) ) {
 				$args['exclude'] = array_map( 'esc_sql', $args['exclude'] );
@@ -269,12 +267,12 @@ class Nested_Term_Query {
 			}
 		}
 
-		//seach in terms name and slug
+		// Search in terms name and slug
 		if ( isset( $args['name__like'] ) && ! empty( $args['name__like'] ) ) {
 			$value     = esc_sql( $args['name__like'] );
 			$clauses[] = " name LIKE '%$value%'";
 		} elseif ( isset( $args['search'] ) && ! empty( $args['search'] ) ) {
-			//seach in terms name and slug
+			// Search in terms name and slug
 			$value     = esc_sql( $args['search'] );
 			$clauses[] = " name LIKE '%$value%' OR slug LIKE '%$value%'";
 		}
@@ -294,27 +292,27 @@ class Nested_Term_Query {
 			//check term found
 			if ( $parent ) {
 				$clauses[] = "{$parent->leftName} between {$parent->left} and {$parent->right} 
-and {$parent->rightName} between {$parent->left} and {$parent->right}";
+				and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 				$parent_set = true;
 			}
 		}
 
-		//parent overrides child_of then use parent_set flag
-		//child_of means the adjacent parent of term should be this
+		// Parent overrides child_of then use parent_set flag
+		// Child_of means the adjacent parent of term should be this
 		if ( isset( $args['child_of'] ) && ! $parent_set && intval( $args['child_of'] ) > 0 ) {
 			$value     = intval( $args['child_of'] );
 			$clauses[] = " parent = $value";
 		}
 
-		//check if want a leaf term with no child
-		//if difference beetween left and right is 1 then its leaf
+		// Check if want a leaf term with no child
+		// If difference between left and right is 1 then its leaf
 		if ( isset( $args['childless'] ) && $args['childless'] ) {
 			$clauses[] = " {$this->leftName} = {$this->rightName}-1 ";
 		}
 
 
-		//Determine order of terms
+		// Determine order of terms
 		$order_by = ' order by name';
 		if ( isset( $args['orderby'] ) && ! empty( $args['orderby'] ) ) {
 			$order_by = " order by " . esc_sql( $args['orderby'] );
@@ -325,7 +323,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			$order = esc_sql( $args['order'] );
 		}
 
-		//Determine how many terms to return
+		// Determine how many terms to return
 		$limit = '';
 		if ( isset( $args['number'] ) && intval( $args['number'] ) > 0 ) {
 			$limit = " limit " . intval( $args['number'] );
@@ -335,7 +333,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			$offset = "offset " . intval( $args['offset'] );
 		}
 
-		//Determine wich field(s) to return
+		// Determine which field(s) to return
 		$field = '*';
 		if ( isset( $args['fields'] ) && ! empty( $args['fields'] ) ) {
 			$value = esc_sql( $args['fields'] );
@@ -353,11 +351,10 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 			} elseif ( in_array( $value, $this->field_set ) ) {
 				$field = $value;
 			}
-			//chceck associatives after get
 		}
 
 
-		//check for metas
+		// Check for metas
 		if ( isset( $args['meta_key'], $args['meta_value'] ) && ! empty( $args['meta_key'] ) && ! empty( $args['meta_value'] ) ) {
 			$compare = "=";
 			$key     = esc_sql( $args['meta_key'] );
@@ -375,12 +372,12 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		}
 
 
-		//if fields not equal to all the get col
+		// If fields not equal to all the get col
 		$get_function = "get_results";
 		if ( $field != '*' ) {
 			$get_function = "get_col";
 		}
-		//count arg override fields
+		// Count arg override fields
 		if ( isset( $args['count'] ) && $args['count'] ) {
 			$field = "count";
 		}
@@ -389,17 +386,17 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		$query  = "SELECT {$field} from {$this->table} where {$clause} {$order_by} {$order} {$limit} {$offset} ";
 
 
-		//Execute query
+		// Execute query
 		$terms = $wpdb->$get_function( $query );
 
-		//Check if meta is on result decode it
+		// Check if meta is on result decode it
 		if ( $field == '*' ) {
 			foreach ( $terms as &$term ) {
 				$term->meta = json_decode( $term->meta );
 			}
 		}
 
-		//check if fields is one of associative fields change result array
+		// Check if fields is one of associative fields change result array
 		$associative_fields = [
 			'id=>parent' => 'parent',
 			'id=>name'   => 'name',
@@ -443,7 +440,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	 * @since 5.0.0
 	 *
 	 */
-	public static function get_instance( $args ) {
+	public static function get_instance( $args ): ?Nested_Term_Query {
 		if ( null === self::$instance ) {
 			self::$instance = new self( $args );
 		}
@@ -451,13 +448,12 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		return self::$instance;
 	}
 
-
 	/**
 	 * Get max right index stored
 	 *
-	 * @return int|string
+	 * @return int
 	 */
-	private function get_max() {
+	private function get_max(): int {
 		global $wpdb;
 
 		$max = $wpdb->get_var( "SELECT max({$this->rightName}) as aggregate from {$this->table}" );
@@ -468,7 +464,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	/**
 	 * @param string $taxonomy taxonomy name
 	 *
-	 * @return bool false when taxonomy does not exists
+	 * @return bool false when taxonomy does not exist
 	 *              true when taxonomy exists
 	 */
 	public function taxonomy_exists( string $taxonomy ): bool {
@@ -476,7 +472,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 		$taxonomy = $wpdb->get_var( "SELECT taxonomy from {$this->table} where taxonomy = '{$taxonomy}' LIMIT 1" );
 
-		return is_null( $taxonomy ) ? false : true;
+		return ! is_null( $taxonomy );
 	}
 
 	private function term_exists( int $term_id ): bool {
@@ -514,17 +510,12 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		int $term_group = 0,
 		int $count = 0,
 		array $meta = null
-	) {
-		//cehck term_exists
-		//if exists return
+	): bool|int {
 		global $wpdb;
 
 		if ( $this->term_exists( $term_id ) ) {
 			return false;
 		}
-
-		//insert new with max left and right
-		$parent_left = 0;
 
 		$max = $this->get_max();
 
@@ -596,50 +587,20 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	 * @param int $left
 	 * @param int $right
 	 *
-	 * @param int|null $parent
+	 * @param int $parent
 	 *
-	 * @return bool|false|int
+	 * @return void
 	 */
-	private function update_node( int $id, int $left, int $right, int $parent = 0 ) {
+	private function update_node( int $id, int $left, int $right, int $parent = 0 ): void {
 		global $wpdb;
 
-		return $wpdb->update( $this->table, [
+		$wpdb->update( $this->table, [
 			$this->leftName  => $left,
 			$this->rightName => $right,
 			'parent'         => $parent,
 		], [
 			'term_id' => $id,
 		] );
-	}
-
-
-	/**
-	 * @param string $taxonomy
-	 *
-	 * @return array
-	 * @return array return right index nad id of inserted root
-	 */
-	private function make_taxonomy_root( string $taxonomy ): array {
-		global $wpdb;
-
-		$max = $this->get_max();
-
-		$left  = $max + 1;
-		$right = $max + 2;
-
-		$wpdb->insert( $this->table, [
-			'name'           => $taxonomy,
-			'taxonomy'       => $taxonomy,
-			$this->leftName  => $left,
-			$this->rightName => $right,
-			'description'    => '',
-		] );
-
-
-		return [
-			'right' => $right,
-			'id'    => $wpdb->insert_id,
-		];
 	}
 
 	/**
@@ -657,7 +618,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 
 	/**
-	 * when update parent node we have to soft delete (remove left and right) node and re-insert it
+	 * when update parent node we have to soft_delete (remove left and right) node and re-insert it
 	 *
 	 * @param int $term_id
 	 * @param int|null $new_parent
@@ -737,15 +698,13 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	 * @return int|bool
 	 * @global    $wpdb
 	 */
-	public function delete_node( $term_id ): int|bool {
+	public function delete_node( int $term_id ): int|bool {
 		global $wpdb;
-
 
 		$term        = nested_get_term( $term_id );
 		$term_parent = $term->parent;
 
-		//if its a parent node make it's children parent to it's parent
-
+		// If it's a parent node make it's children parent to it's parent
 		$wpdb->delete( $this->table, [
 			'term_id' => $term_id,
 		] );
@@ -766,7 +725,7 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 	 *
 	 * @global    $wpdb
 	 */
-	public function get_ancestors( int $term_id ) {
+	public function get_ancestors( int $term_id ): array {
 		global $wpdb;
 
 		$terms = new Nested_Term();
@@ -777,13 +736,13 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		$ancestors = $wpdb->get_results( $query );
 
 		$result = [];
-		foreach ( $ancestors as $ancetor ) {
-			$ancetor          = (array) $ancetor;
-			$ancetor['left']  = $ancetor[ $this->leftName ];
-			$ancetor['right'] = $ancetor[ $this->rightName ];
+		foreach ( $ancestors as $ancestor ) {
+			$ancestor          = (array) $ancestor;
+			$ancestor['left']  = $ancestor[ $this->leftName ];
+			$ancestor['right'] = $ancestor[ $this->rightName ];
 
-			$ancetor  = (object) $ancetor;
-			$result[] = $ancetor;
+			$ancestor  = (object) $ancestor;
+			$result[] = $ancestor;
 		}
 
 		return $result;
