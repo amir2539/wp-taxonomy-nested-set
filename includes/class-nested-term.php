@@ -162,16 +162,13 @@ class  Nested_Term {
 		}
 
 		$term = $this->get_instance( $term_id );
+
 		//compare what fields have changed
 		$args = $this->array_compare( (array) $term, $args );
+		$nested_query = new Nested_Term_Query();
+		$nested_query->re_insert( $term_id, $args['parent'] ?? 0 );
 
-		if ( isset( $args['parent'] ) && intval( $args['parent'] ) > 0 ) {
-			$nested_query = new Nested_Term_Query();
-			$nested_query->re_insert( $term_id, $args['parent'] );
-		}
-
-		unset( $args['parent'] );
-		unset( $args['count'] );
+		unset( $args['parent'], $args['count'] );
 
 		return $wpdb->update( $this->table,
 			$args, [
@@ -189,7 +186,7 @@ class  Nested_Term {
 		$result = [];
 
 		foreach ( $arr1 as $key => $value ) {
-			if ( $arr2[ $key ] != $value && isset( $arr2[ $key ] ) ) {
+			if ( ( $arr2[ $key ] ?? null ) != $value && isset( $arr2[ $key ] ) ) {
 				$result[ $key ] = $arr2[ $key ];
 			}
 		}
@@ -295,7 +292,7 @@ class  Nested_Term {
 			$term = $this->get_instance( $term );
 		}
 
-		$query   = "SELECT * FROM {$this->table} where {$this->leftName} <= {$term->left} AND {$this->rightName} >= {$term->right}
+		$query = "SELECT * FROM {$this->table} where {$this->leftName} <= {$term->left} AND {$this->rightName} >= {$term->right}
 		order by {$this->leftName} ASC";
 
 		$results = $wpdb->get_results( $query );

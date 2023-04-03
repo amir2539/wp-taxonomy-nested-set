@@ -657,64 +657,16 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 
 
 	/**
-	 * when update parent node we have to soft delete (remove left and right) node and re insert it
+	 * when update parent node we have to soft delete (remove left and right) node and re-insert it
 	 *
 	 * @param int $term_id
-	 * @param int $new_parent
+	 * @param int|null $new_parent
 	 *
 	 * @return bool|int
 	 */
-	public function re_insert( int $term_id, int $new_parent ) {
-		$term = nested_get_term( $term_id );
-
+	public function re_insert( int $term_id, int $new_parent ): bool|int {
 		global $wpdb;
-
-		$parent_left = 0;
-
-		$max = $this->get_max();
-
-		$left  = $max + 1;
-		$right = $max + 2;
-
-		//make left and right 0
-		$wpdb->update( $this->table, [
-			$this->leftName  => $left,
-			$this->rightName => $right,
-		], [
-			'term_id' => $term_id,
-		] );
-
-
-		$node_id = $term_id;
-
-
-//		//get parent left and update it
-//		$parent_left = $parent_left != 0 ? $parent_left : $this->get_parent_left( $term->parent );
-//
-//		$left_range = $parent_left + 1;
-//
-//		$query = "UPDATE {$this->table} set {$this->leftName} = case
-//					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}-2
-//					else {$this->leftName} end ,
-//
-//					{$this->rightName} = case
-//					when {$this->rightName} BETWEEN  {$left_range} and {$right} then {$this->rightName}-2
-//					else '{$this->rightName}' end
-//
-//					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
-//
-//
-//		$result = $wpdb->query( $query );
-//
-//
-//		if ( ! empty( $wpdb->last_error ) || ! $result ) {
-//			file_put_contents( __DIR__ . '/logs/query.log', json_encode( [
-//					'query' => $query,
-//					'error' => $wpdb->last_error,
-//				], JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
-//
-//			return false;
-//		}
+		nested_get_term( $term_id );
 
 		$max = $this->get_max();
 
@@ -728,14 +680,16 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 		], [
 			'term_id' => $term_id,
 		] );
-		//get parent left and update it
-		$parent_left = $this->get_parent_left( $new_parent );
 
-		$diff = $left - ( $parent_left + 1 );
+		if ( $new_parent ) {
+			//get parent left and update it
+			$parent_left = $this->get_parent_left( $new_parent );
 
-		$left_range = $parent_left + 1;
+			$diff = $left - ( $parent_left + 1 );
 
-		$query = "UPDATE {$this->table} set {$this->leftName} = case 
+			$left_range = $parent_left + 1;
+
+			$query = "UPDATE {$this->table} set {$this->leftName} = case 
 					when {$this->leftName} BETWEEN  {$left} and {$right} then {$this->leftName}-{$diff} 
 					when {$this->leftName} BETWEEN  {$left_range} and {$right} then {$this->leftName}+2 
 					else {$this->leftName} end ,
@@ -748,30 +702,31 @@ and {$parent->rightName} between {$parent->left} and {$parent->right}";
 					where ({$this->leftName} between {$left_range} and {$right} or {$this->rightName} between {$left_range} and {$right})";
 
 
-		$result = $wpdb->query( $query );
+			$result = $wpdb->query( $query );
 
-		if ( ! empty( $wpdb->last_error ) || ! $result ) {
-			file_put_contents( __DIR__ . '/logs/query.log',
-				json_encode( [
-					'query' => $query,
-					'error' => $wpdb->last_error,
-				], JSON_PRETTY_PRINT ) . PHP_EOL,
-				FILE_APPEND );
+			if ( ! empty( $wpdb->last_error ) || ! $result ) {
+				file_put_contents( __DIR__ . '/logs/query.log',
+					json_encode( [
+						'query' => $query,
+						'error' => $wpdb->last_error,
+					], JSON_PRETTY_PRINT ) . PHP_EOL,
+					FILE_APPEND );
 
-			return false;
+				return false;
+			}
+
+			// update node
+			$this->update_node( $term_id, ( $left - $diff ), ( $right - $diff ), $new_parent );
+
+			//update all children
+			$children = $wpdb->get_results( "SELECT * from {$this->table} where parent = {$term_id}" );
+
+			foreach ( $children as $child ) {
+				$this->re_insert( $child->term_id, $term_id );
+			}
 		}
 
-
-		// update node
-		$this->update_node( $node_id, ( $left - $diff ), ( $right - $diff ), $new_parent );
-
-		//update all children
-		$chidlren = $wpdb->get_results( "SELECT * from {$this->table} where parent = {$term_id}" );
-		foreach ( $chidlren as $child ) {
-			$this->re_insert( $child->term_id, $term_id );
-		}
-
-		return $node_id;
+		return $term_id;
 	}
 
 	/**
