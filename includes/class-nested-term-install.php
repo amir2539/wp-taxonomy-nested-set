@@ -1,8 +1,6 @@
 <?php
-/**
- * Developer : AmirMohammad Torkaman
- * Email : amirtorkaman5204@gmail.com
- **/
+
+defined( 'ABSPATH' ) || exit;
 
 require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
