@@ -1,8 +1,4 @@
 <?php
-/**
- * Developer : AmirMohammad Torkaman
- * Email : amirtorkaman5204@gmail.com
- **/
 
 defined( 'ABSPATH' ) || exit;
 
