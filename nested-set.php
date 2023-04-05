@@ -1,8 +1,13 @@
 <?php
 /**
- * Plugin Name: nested set fort wordpress
- * Developer : AmirMohammad Torkaman
- * Email : amirtorkaman5204@gmail.com
+ * Plugin Name: Nested-Set Terms
+ * Plugin URI: https://github.com/amir2539/wp-taxonomy-nested-set
+ * Description: This plugin will store terms and taxonomies in nested-set algorithm and will save a lot of time in queries.
+ * Author : AmirMohammad Torkaman
+ * Author URI: https://github.com/amir2539
+ * Version: 0.1
+ * Requires at least: 5.0
+ * Requires PHP: 8
  **/
 
 defined( 'ABSPATH' ) || exit;
